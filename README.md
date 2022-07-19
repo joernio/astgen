@@ -19,10 +19,10 @@ The AST is created by using the bundled babel parser (for JavaScript, TypeScript
 ## Building
 
 ```bash
-yarn build
+yarn install
 ```
 
-This will invoke `pgk` and generates a native binary for Windows, MacOS, and Linux.
+This will invoke `pgk` after `yarn install` and generates a native binary for Windows, MacOS, and Linux.
 
 ## Getting Help
 
