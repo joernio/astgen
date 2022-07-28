@@ -93,25 +93,21 @@ const toJSAst = (file) => {
   return ast;
 };
 
+const vueCleaningRegex = /<\/*script.*>|<\!--[\s\S]*-->|<style[\s\S]*style>|<\/*br>/ig;
+const vueTemplateRegex = /(<template.*>)([\s\S]*)(<\/template>)/ig;
+
 /**
  * Convert a single vue file to AST
  */
 const toVueAst = (file) => {
   const code = fs.readFileSync(file, "utf-8");
   const cleanedCode = code
-    // replace script tag with whitespace
-    .replace(/<\/*script.*>/ig, function(match,p1,p2,offset,str){return " ".repeat(match.length)})
-    // replace template tag with whitespace
-    .replace(/<\/*template>/ig, function(match,p1,p2,offset,str){return " ".repeat(match.length)})
-    // replace comments (potentially multiline) not parsable with babel with whitespace
-    .replace(/<\!--[\s\S]*-->/ig, function(match,p1,p2,offset,str){return match.replaceAll(/\S/g, " ")})
-    // replace style block (potentially multiline) not parsable with babel with whitespace
-    .replace(/<style[\s\S]*style>/ig, function(match,p1,p2,offset,str){return match.replaceAll(/\S/g, " ")})
-    // replace br tags not parsable with babel with whitespace
-    .replace(/<\/*br>/ig, function(match,p1,p2,offset,str){return match.replaceAll(/\S/g, " ")})
-    // replace vue code markers
-    .replaceAll("{{", "{ ").replaceAll("}}", " }");
-
+    .replace(vueCleaningRegex, function(match){ return match.replaceAll(/\S/g, " ") })
+    .replace(vueTemplateRegex, function(match, grA, grB, grC){
+      return grA.replaceAll(/\S/g, " ") +
+             grB.replaceAll("{{", "{ ").replaceAll("}}", " }") +
+             grC.replaceAll(/\S/g, " ")
+    });
   const ast = babelParser.parse(
     cleanedCode,
     babelParserOptions
