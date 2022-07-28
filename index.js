@@ -98,11 +98,15 @@ const toJSAst = (file) => {
  * Convert a single vue file to AST
  */
 const toVueAst = (file) => {
-  const astObj = vueCompiler.compile(fs.readFileSync(file, "utf-8"));
-  if (astObj && astObj.ast) {
-    return astObj.ast;
-  }
-  return undefined;
+  const astObj = vueCompiler.parseComponent(fs.readFileSync(file, "utf-8"));
+  const script = astObj.script ? astObj.script.content : "";
+  const template = astObj.template ? astObj.template.content : "";
+  const jsCode = "\n" + template + "\n" + script;
+  const ast = babelParser.parse(
+    jsCode.replaceAll("<br>", "    ").replaceAll("</br>", "    ").replaceAll("{{", "{ ").replaceAll("}}", " }"),
+    babelParserOptions
+  );
+  return ast;
 };
 
 /**
