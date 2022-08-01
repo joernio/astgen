@@ -1,0 +1,23 @@
+name: main
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build
+        run: |
+          yarn install
+          chmod +x astgen-macos
+          chmod +x astgen-linux
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            astgen-win.exe
+            astgen-macos
+            astgen-linux
+            
