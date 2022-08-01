@@ -13,6 +13,9 @@ jobs:
         uses: mathieudutour/github-tag-action@v6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Export LATEST_TAG
+        run:
+          echo "LATEST_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
       - name: Build
         run: |
           yarn install
@@ -20,8 +23,9 @@ jobs:
           chmod +x astgen-linux
       - name: Release
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
         with:
+          tag_name: ${{ env.LATEST_TAG }}
+          release_name: ${{ env.LATEST_TAG }}
           files: |
             astgen-win.exe
             astgen-macos
