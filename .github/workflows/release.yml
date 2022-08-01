@@ -20,6 +20,7 @@ jobs:
           chmod +x astgen-linux
       - name: Release
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
             astgen-win.exe
