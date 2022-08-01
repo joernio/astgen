@@ -25,7 +25,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.LATEST_TAG }}
-          release_name: ${{ env.LATEST_TAG }}
           files: |
             astgen-win.exe
             astgen-macos
