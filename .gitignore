@@ -109,3 +109,6 @@ dist
 .tool-versions
 .idea/
 test/obj
+astgen-linux
+astgen-macos
+astgen-win.exe
