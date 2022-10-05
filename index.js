@@ -78,6 +78,8 @@ const getAllSrcJSAndTSFiles = (src) =>
   Promise.all([
     getAllFiles(src, ".js"),
     getAllFiles(src, ".jsx"),
+    getAllFiles(src, ".cjs"),
+    getAllFiles(src, ".mjs"),
     getAllFiles(src, ".ts"),
     getAllFiles(src, ".tsx"),
   ]);
