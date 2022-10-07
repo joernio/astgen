@@ -39,7 +39,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "$(git describe --tags --abbrev=0)"
+          tag_name: ${{ steps.taggerDryRun.outputs.new_tag }}
           files: |
             astgen-win.exe
             astgen-macos
