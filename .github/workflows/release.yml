@@ -2,21 +2,44 @@ name: main
 
 on: push
 
+concurrency: production
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+      - name: Get next release version (dry run)
+        id: taggerDryRun
+        uses: anothrNick/github-tag-action@1.36.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true
+          DRY_RUN: true
+      - name: echo new tag
+        run: |
+          echo "The next tag version will be: ${{ steps.taggerDryRun.outputs.new_tag }}"
+      - name: echo tag
+        run: |
+          echo "The current tag is: ${{ steps.taggerDryRun.outputs.tag }}"
       - name: Build
         run: |
           yarn install
           chmod +x astgen-macos
           chmod +x astgen-linux
+      - name: Set next release version
+        id: taggerFinal
+        uses: anothrNick/github-tag-action@1.36.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "latest"
+          tag_name: "$(git describe --tags --abbrev=0)"
           files: |
             astgen-win.exe
             astgen-macos
