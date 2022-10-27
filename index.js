@@ -13,8 +13,18 @@ const IGNORE_DIRS = [
   "test",
   "tests",
   "e2e",
+  "e2e-beta",
   "examples",
   "cypress",
+  "jest-cache",
+  "eslint-rules",
+  "codemods",
+  "flow-typed",
+  "i18n",
+  "vendor",
+  "www",
+  "dist",
+  "build",
 ];
 
 const IGNORE_FILE_PATTERN = new RegExp("(conf|test|spec)\\.(js|ts)$", "i");
@@ -34,6 +44,7 @@ const getAllFiles = (dir, extn, files, result, regex) => {
       const dirName = path.basename(file);
       if (
         dirName.startsWith(".") ||
+        dirName.startsWith("__") ||
         IGNORE_DIRS.includes(dirName.toLowerCase())
       ) {
         continue;
