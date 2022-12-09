@@ -106,8 +106,12 @@ const toJSAst = (file) => {
   return ast;
 };
 
-const vueCleaningRegex = /<\/*script.*>|<\!--[\s\S]*-->|<style[\s\S]*style>|<\/*br>/ig;
+const vueCleaningRegex = /<\/*script.*>|<style[\s\S]*style>|<\/*br>/ig;
 const vueTemplateRegex = /(<template.*>)([\s\S]*)(<\/template>)/ig;
+const vueCommentRegex = /<\!--[\s\S]*?-->/ig;
+const vueBindRegex = /(:\[)([\s\S]*?)(\])/ig;
+const vuePropRegex = /(<[\sa-zA-Z]*?)(:|@|\.)([\s\S]*?=)/ig;
+
 
 /**
  * Convert a single vue file to AST
@@ -115,11 +119,24 @@ const vueTemplateRegex = /(<template.*>)([\s\S]*)(<\/template>)/ig;
 const toVueAst = (file) => {
   const code = fs.readFileSync(file, "utf-8");
   const cleanedCode = code
-    .replace(vueCleaningRegex, function(match){ return match.replaceAll(/\S/g, " ") })
-    .replace(vueTemplateRegex, function(match, grA, grB, grC){
+    .replace(vueCommentRegex, function(match){ return match.replaceAll(/\S/g, " ") })
+    .replace(vueCleaningRegex, function(match){ return match.replaceAll(/\S/g, " ").substring(1) + ";" })
+    .replace(vueBindRegex, function(match, grA, grB, grC){
       return grA.replaceAll(/\S/g, " ") +
-             grB.replaceAll("{{", "{ ").replaceAll("}}", " }") +
+             grB +
              grC.replaceAll(/\S/g, " ")
+    })
+    .replace(vuePropRegex, function(match, grA, grB, grC){
+      return grA +
+             grB.replaceAll(/\S/g, " ") +
+             grC.replace(/\.|:|@/g, "-")
+    })
+    .replace(vueTemplateRegex, function(match, grA, grB, grC){
+      return grA +
+             grB
+               .replaceAll("{{", "{ ")
+               .replaceAll("}}", " }") +
+             grC
     });
   const ast = babelParser.parse(
     cleanedCode,
