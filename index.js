@@ -1,6 +1,6 @@
 const babelParser = require("@babel/parser");
 const execFileSync = require("child_process");
-const svelteCompiler = require("svelte/compiler");
+const tsc = require("typescript");
 
 const path = require("path");
 const { join } = require("path");
@@ -145,15 +145,38 @@ const toVueAst = (file) => {
   return ast;
 };
 
-/**
- * Convert a single svelte file to AST
- */
-const toSvelteAst = (file) => {
-  const astObj = svelteCompiler.parse(fs.readFileSync(file, "utf-8"), {
-    filename: file,
-  });
-  return astObj;
-};
+
+function createTsc(srcFiles) {
+  try {
+    const program = tsc.createProgram(srcFiles, {
+      target: tsc.ScriptTarget.ES6,
+      module: tsc.ModuleKind.CommonJS,
+      allowJs: true
+    });
+    const typeChecker = program.getTypeChecker();
+    const seenTypes = new Map();
+
+    function addType(node) {
+      const type = typeChecker.getTypeAtLocation(node);
+      const typeStr = typeChecker.typeToString(type, node,
+        tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
+      );
+      const nodeLocation = node.pos + 1
+      seenTypes.set(nodeLocation, typeStr);
+      tsc.forEachChild(node, addType);
+    }
+
+    return {
+      program: program,
+      typeChecker: typeChecker,
+      addType: addType,
+      seenTypes: seenTypes
+    };
+  } catch (err) {
+    console.error(err);
+    undefined;
+  }
+}
 
 
 /**
@@ -161,16 +184,21 @@ const toSvelteAst = (file) => {
  */
 const createJSAst = async (options) => {
   try {
-    const errFiles = [];
     const promiseMap = await getAllSrcJSAndTSFiles(options.src);
     const srcFiles = promiseMap.flatMap((d) => d);
+    const ts = createTsc(srcFiles);
+
     for (const file of srcFiles) {
       try {
         const ast = toJSAst(file);
         writeAstFile(file, ast, options);
+        if (ts) {
+          const tsAst = ts.program.getSourceFile(file);
+          tsc.forEachChild(tsAst, ts.addType);
+          writeTypesFile(tsAst.fileName, ts.seenTypes, options);
+        }
       } catch (err) {
         console.error(file, err.message);
-        errFiles.push(file);
       }
     }
   } catch (err) {
@@ -186,23 +214,6 @@ const createVueAst = async (options) => {
   for (const file of srcFiles) {
     try {
       const ast = toVueAst(file);
-      if (ast) {
-        writeAstFile(file, ast, options);
-      }
-    } catch (err) {
-      console.error(file, err.message);
-    }
-  }
-};
-
-/**
- * Generate AST for .svelte files
- */
-const createSvelteAst = async (options) => {
-  const srcFiles = getAllFiles(options.src, ".svelte");
-  for (const file of srcFiles) {
-    try {
-      const ast = toSvelteAst(file);
       if (ast) {
         writeAstFile(file, ast, options);
       }
@@ -229,6 +240,14 @@ const getCircularReplacer = () => {
   };
 };
 
+function mapToObj(map) {
+  let obj = Object.create(null);
+  for (let [k,v] of map) {
+    obj[k.toString()] = v;
+  }
+  return obj;
+}
+
 /**
  * Write AST data to a json file
  */
@@ -246,6 +265,16 @@ const writeAstFile = (file, ast, options) => {
     JSON.stringify(data, getCircularReplacer(), "  ")
   );
   console.log("Converted", relativePath, "to", outAstFile);
+};
+
+const writeTypesFile = (file, seenTypes, options) => {
+  const relativePath = file.replace(new RegExp("^" + options.src + "/"), "");
+  const outAstFile = path.join(options.output, relativePath + ".typemap");
+  fs.mkdirSync(path.dirname(outAstFile), { recursive: true });
+  fs.writeFileSync(
+    outAstFile,
+    JSON.stringify(mapToObj(seenTypes))
+  );
 };
 
 
@@ -289,8 +318,6 @@ const start = async (options) => {
       return await createJSAst(options);
     case "vue":
       return await createVueAst(options);
-    case "svelte":
-      return await createSvelteAst(options);
     default:
       return await createXAst(options);
   }

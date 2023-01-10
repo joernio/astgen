@@ -15,13 +15,13 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@babel/parser": "^7.17.9",
-    "svelte": "^3.47.0",
+    "typescript": "^4.9.4",
     "yargs": "^17.4.1"
   },
   "scripts": {
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
-    "postinstall": "pkg . --no-bytecode --no-native-build --public"
+    "postinstall": "pkg . --no-bytecode --no-native-build --public --compress GZip"
   },
   "engines": {
     "node": ">=14.0.0"
