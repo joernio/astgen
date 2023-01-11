@@ -156,6 +156,26 @@ function createTsc(srcFiles) {
     const typeChecker = program.getTypeChecker();
     const seenTypes = new Map();
 
+    function safeTypeToString(node) {
+      try {
+        return typeChecker.typeToString(node,
+          tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
+        ); 
+      } catch (err) {
+        return "any";
+      }
+    }
+
+    function safeTypeToString(node, context) {
+      try {
+        return typeChecker.typeToString(node, context,
+          tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
+        ); 
+      } catch (err) {
+        return "any";
+      }
+    }
+
     function addType(node) {
       let typeStr;
       if (tsc.isSetAccessor(node) ||
@@ -166,25 +186,17 @@ function createTsc(srcFiles) {
           tsc.isConstructorDeclaration(node)) {
         const signature = typeChecker.getSignatureFromDeclaration(node);
         const returnType = typeChecker.getReturnTypeOfSignature(signature);
-        typeStr = typeChecker.typeToString(returnType,
-          tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
-        );
+        typeStr = safeTypeToString(returnType);
       } else if (tsc.isFunctionLike(node)) {
         const funcType = typeChecker.getTypeAtLocation(node);
         const funcSignature = typeChecker.getSignaturesOfType(funcType, tsc.SignatureKind.Call)[0];
         if (funcSignature) {
-          typeStr = typeChecker.typeToString(funcSignature.getReturnType(),
-            tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
-          );
+          typeStr = safeTypeToString(funcSignature.getReturnType());
         } else {
-          typeStr = typeChecker.typeToString(typeChecker.getTypeAtLocation(node), node,
-            tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
-          );
+          typeStr = safeTypeToString(typeChecker.getTypeAtLocation(node), node);
         }
       } else {
-        typeStr = typeChecker.typeToString(typeChecker.getTypeAtLocation(node), node,
-          tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
-        );
+        typeStr = safeTypeToString(typeChecker.getTypeAtLocation(node), node);
       }
       const nodeLocation = node.pos + 1
       seenTypes.set(nodeLocation, typeStr);
@@ -198,7 +210,7 @@ function createTsc(srcFiles) {
       seenTypes: seenTypes
     };
   } catch (err) {
-    console.error(err);
+    console.warn("Retrieving types", err.message);
     undefined;
   }
 }
@@ -217,13 +229,17 @@ const createJSAst = async (options) => {
       try {
         const ast = toJSAst(file);
         writeAstFile(file, ast, options);
-        if (ts) {
+      } catch (err) {
+        console.error(file, err.message);
+      }
+      if (ts) {
+        try {
           const tsAst = ts.program.getSourceFile(file);
           tsc.forEachChild(tsAst, ts.addType);
           writeTypesFile(file, ts.seenTypes, options);
+        } catch (err) {
+          console.warn("Retrieving types", file, ":", err.message);
         }
-      } catch (err) {
-        console.error(file, err.message);
       }
     }
   } catch (err) {
