@@ -157,10 +157,18 @@ function createTsc(srcFiles) {
     const seenTypes = new Map();
 
     function addType(node) {
-      const type = typeChecker.getTypeAtLocation(node);
-      const typeStr = typeChecker.typeToString(type, node,
-        tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
-      );
+      let typeStr;
+      if (tsc.isFunctionLike(node)) {
+        const funcType = typeChecker.getTypeAtLocation(node);
+        const funcSignature = typeChecker.getSignaturesOfType(funcType, tsc.SignatureKind.Call)[0];
+        typeStr = typeChecker.typeToString(funcSignature.getReturnType(),
+          tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
+        );
+      } else {
+        typeStr = typeChecker.typeToString(typeChecker.getTypeAtLocation(node), node,
+          tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
+        );
+      }
       const nodeLocation = node.pos + 1
       seenTypes.set(nodeLocation, typeStr);
       tsc.forEachChild(node, addType);
