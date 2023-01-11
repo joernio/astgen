@@ -2,17 +2,17 @@
 
 This script creates Abstract Syntax Tree (AST) of all JS/TS files in JSON format.
 The AST is created by using the bundled babel parser (for JavaScript, TypeScript).
+Type maps are generated using the Typescript compiler / type checker API.
 
 ## Supported languages
 
-| Language   | Tool used                   |
-| ---------- | --------------------------- |
-| JavaScript | babel                       |
-| TypeScript | babel                       |
-| Vue        | vue-template-compiler       |
-| Svelte     | svelte/compiler             |
-| JSX        | babel                       |
-| TSX        | babel                       |
+| Language   | Tool used                   | Notes         |
+| ---------- | --------------------------- | ------------- |
+| JavaScript | babel                       | types via tsc |
+| TypeScript | babel                       | types via tsc |
+| Vue        | babel                       |               |
+| JSX        | babel                       |               |
+| TSX        | babel                       |               |
 
 ## Usage
 
@@ -50,6 +50,6 @@ astgen
 To specify the project type and the path to the project.
 
 ```bash
-astgen -t nodejs -i <path to project>
+astgen -t js -i <path to project>
 astgen -t vue -i <path containing .vue files>
 ```

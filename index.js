@@ -158,12 +158,29 @@ function createTsc(srcFiles) {
 
     function addType(node) {
       let typeStr;
-      if (tsc.isFunctionLike(node)) {
-        const funcType = typeChecker.getTypeAtLocation(node);
-        const funcSignature = typeChecker.getSignaturesOfType(funcType, tsc.SignatureKind.Call)[0];
-        typeStr = typeChecker.typeToString(funcSignature.getReturnType(),
+      if (tsc.isSetAccessor(node) ||
+          tsc.isGetAccessor(node) ||
+          tsc.isConstructSignatureDeclaration(node) ||
+          tsc.isMethodDeclaration(node) ||
+          tsc.isFunctionDeclaration(node) ||
+          tsc.isConstructorDeclaration(node)) {
+        const signature = typeChecker.getSignatureFromDeclaration(node);
+        const returnType = typeChecker.getReturnTypeOfSignature(signature);
+        typeStr = typeChecker.typeToString(returnType,
           tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
         );
+      } else if (tsc.isFunctionLike(node)) {
+        const funcType = typeChecker.getTypeAtLocation(node);
+        const funcSignature = typeChecker.getSignaturesOfType(funcType, tsc.SignatureKind.Call)[0];
+        if (funcSignature) {
+          typeStr = typeChecker.typeToString(funcSignature.getReturnType(),
+            tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
+          );
+        } else {
+          typeStr = typeChecker.typeToString(typeChecker.getTypeAtLocation(node), node,
+            tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
+          );
+        }
       } else {
         typeStr = typeChecker.typeToString(typeChecker.getTypeAtLocation(node), node,
           tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
@@ -203,7 +220,7 @@ const createJSAst = async (options) => {
         if (ts) {
           const tsAst = ts.program.getSourceFile(file);
           tsc.forEachChild(tsAst, ts.addType);
-          writeTypesFile(tsAst.fileName, ts.seenTypes, options);
+          writeTypesFile(file, ts.seenTypes, options);
         }
       } catch (err) {
         console.error(file, err.message);
