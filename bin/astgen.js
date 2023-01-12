@@ -28,6 +28,11 @@ async function main(argvs) {
       type: "boolean",
       description: "Recurse mode suitable for mono-repos",
     })
+    .option("tsTypes", {
+      default: true,
+      type: "boolean",
+      description: "Generate type mappings using the Typescript Compiler API",
+    })
     .version()
     .help("h").argv;
 

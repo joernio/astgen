@@ -223,7 +223,10 @@ const createJSAst = async (options) => {
   try {
     const promiseMap = await getAllSrcJSAndTSFiles(options.src);
     const srcFiles = promiseMap.flatMap((d) => d);
-    const ts = createTsc(srcFiles);
+    let ts;
+    if (options.tsTypes) {
+      ts = createTsc(srcFiles);
+    }
 
     for (const file of srcFiles) {
       try {
@@ -305,17 +308,18 @@ const writeAstFile = (file, ast, options) => {
     outAstFile,
     JSON.stringify(data, getCircularReplacer(), "  ")
   );
-  console.log("Converted", relativePath, "to", outAstFile);
+  console.log("Converted AST for", relativePath, "to", outAstFile);
 };
 
 const writeTypesFile = (file, seenTypes, options) => {
   const relativePath = file.replace(new RegExp("^" + options.src + "/"), "");
-  const outAstFile = path.join(options.output, relativePath + ".typemap");
-  fs.mkdirSync(path.dirname(outAstFile), { recursive: true });
+  const outTypeFile = path.join(options.output, relativePath + ".typemap");
+  fs.mkdirSync(path.dirname(outTypeFile), { recursive: true });
   fs.writeFileSync(
-    outAstFile,
+    outTypeFile,
     JSON.stringify(mapToObj(seenTypes))
   );
+  console.log("Converted types for", relativePath, "to", outTypeFile);
 };
 
 

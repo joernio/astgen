@@ -1,7 +1,7 @@
 {
   "name": "@joernio/astgen",
-  "version": "2.0.4",
-  "description": "Generate AST in json format for a number of languages by invoking appropriate tool",
+  "version": "0.1.0",
+  "description": "Generate JS/TS AST in json format with Babel",
   "exports": "./index.js",
   "keywords": [
     "AST",
@@ -10,8 +10,8 @@
   "bin": {
     "astgen": "./bin/astgen.js"
   },
-  "repository": "https://github.com/joernio/astgen",
-  "author": "Team joernio",
+  "repository": "https://github.com/max-leuthaeuser/astgen",
+  "author": "Max Leuthaeuser",
   "license": "Apache-2.0",
   "dependencies": {
     "@babel/parser": "^7.17.9",
@@ -19,8 +19,6 @@
     "yargs": "^17.4.1"
   },
   "scripts": {
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
-    "watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "postinstall": "pkg . --no-bytecode --no-native-build --public --compress GZip"
   },
   "engines": {
@@ -32,7 +30,6 @@
   ],
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "jest": "^26.6.3",
     "pkg": "^5.8.0"
   }
 }
