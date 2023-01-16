@@ -10,7 +10,7 @@
   "bin": {
     "astgen": "./bin/astgen.js"
   },
-  "repository": "https://github.com/max-leuthaeuser/astgen",
+  "repository": "https://github.com/joernio/astgen",
   "author": "Max Leuthaeuser",
   "license": "Apache-2.0",
   "dependencies": {
