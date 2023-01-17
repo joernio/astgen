@@ -15,6 +15,10 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: '0'
+      - name: Install ldid
+        uses: MOZGIII/install-ldid-action@v1
+        with:
+          tag: v2.1.5-procursus6
       - name: Get next release version (dry run)
         id: taggerDryRun
         uses: anothrNick/github-tag-action@1.36.0
@@ -29,9 +33,15 @@ jobs:
         run: |
           echo "The current tag is: ${{ steps.taggerDryRun.outputs.tag }}"
       - name: Build
-        run: |
-          yarn install
+        run: yarn install
+      - name: Rename
+          mv astgen-linux-x64 astgen-linux
+          mv astgen-macos-x64 astgen-macos
+          mv astgen-macos-arm64 astgen-macos-arm
+          mv astgen-win-x64.exe astgen-win.exe
+      - name: Make executable
           chmod +x astgen-macos
+          chmod +x astgen-macos-arm
           chmod +x astgen-linux
       - name: Set next release version
         id: taggerFinal
@@ -46,5 +56,5 @@ jobs:
           files: |
             astgen-win.exe
             astgen-macos
+            astgen-macos-arm
             astgen-linux
-            
