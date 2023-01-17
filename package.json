@@ -19,10 +19,10 @@
     "yargs": "^17.4.1"
   },
   "scripts": {
-    "postinstall": "pkg . --no-bytecode --no-native-build --public --compress GZip"
+    "postinstall": "pkg . --no-bytecode --no-native-build --public --compress GZip --targets node16-linux-x64,node16-macos-x64,node16-win-x64,node16-macos-arm64"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16.0.0"
   },
   "files": [
     "*.js",
