@@ -43,8 +43,9 @@ jobs:
       - name: Make executable
         run: |
           chmod +x astgen-macos
-          chmod +x astgen-macos-arm
           chmod +x astgen-linux
+          ldid -S astgen-macos-arm
+          chmod +x astgen-macos-arm
       - name: Set next release version
         id: taggerFinal
         uses: anothrNick/github-tag-action@1.36.0
