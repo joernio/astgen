@@ -26,6 +26,5 @@ jobs:
         run: |
           chmod +x astgen-macos
           chmod +x astgen-linux
-          chmod +aw astgen-macos-arm
           ldid -S astgen-macos-arm
           chmod +x astgen-macos-arm
