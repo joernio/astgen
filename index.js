@@ -198,8 +198,7 @@ function createTsc(srcFiles) {
       } else {
         typeStr = safeTypeToString(typeChecker.getTypeAtLocation(node), node);
       }
-      const nodeLocation = node.pos + 1
-      seenTypes.set(nodeLocation, typeStr);
+      seenTypes.set(node.getStart(), typeStr);
       tsc.forEachChild(node, addType);
     }
 
