@@ -1,5 +1,4 @@
 const babelParser = require("@babel/parser");
-const execFileSync = require("child_process");
 const tsc = require("typescript");
 
 const path = require("path");
@@ -51,9 +50,7 @@ const getAllFiles = (dir, extn, files, result, regex) => {
       }
       try {
         result = getAllFiles(file, extn, fs.readdirSync(file), result, regex);
-      } catch (error) {
-        continue;
-      }
+      } catch (error) {}
     } else {
       if (regex.test(file)) {
         result.push(file);
@@ -99,19 +96,17 @@ const getAllSrcJSAndTSFiles = (src) =>
  * Convert a single JS/TS file to AST
  */
 const toJSAst = (file) => {
-  const ast = babelParser.parse(
-    fs.readFileSync(file, "utf-8"),
-    babelParserOptions
+  return babelParser.parse(
+      fs.readFileSync(file, "utf-8"),
+      babelParserOptions
   );
-  return ast;
 };
 
 const vueCleaningRegex = /<\/*script.*>|<style[\s\S]*style>|<\/*br>/ig;
 const vueTemplateRegex = /(<template.*>)([\s\S]*)(<\/template>)/ig;
 const vueCommentRegex = /<\!--[\s\S]*?-->/ig;
 const vueBindRegex = /(:\[)([\s\S]*?)(\])/ig;
-const vuePropRegex = /(<[\sa-zA-Z]*?)(:|@|\.)([\s\S]*?=)/ig;
-
+const vuePropRegex = /([\s\S]*?)([.:@])([\s\S]*?)/ig;
 
 /**
  * Convert a single vue file to AST
@@ -129,7 +124,7 @@ const toVueAst = (file) => {
     .replace(vuePropRegex, function(match, grA, grB, grC){
       return grA +
              grB.replaceAll(/\S/g, " ") +
-             grC.replace(/\.|:|@/g, "-")
+             grC.replace(/[.:@]/g, "-")
     })
     .replace(vueTemplateRegex, function(match, grA, grB, grC){
       return grA +
@@ -138,11 +133,10 @@ const toVueAst = (file) => {
                .replaceAll("}}", " }") +
              grC
     });
-  const ast = babelParser.parse(
-    cleanedCode,
-    babelParserOptions
+  return babelParser.parse(
+      cleanedCode,
+      babelParserOptions
   );
-  return ast;
 };
 
 
@@ -210,7 +204,7 @@ function createTsc(srcFiles) {
     };
   } catch (err) {
     console.warn("Retrieving types", err.message);
-    undefined;
+    return undefined;
   }
 }
 
@@ -330,8 +324,6 @@ const createXAst = async (options) => {
     console.error(src_dir, "is invalid");
     process.exit(1);
   }
-  const { projectType } = options;
-  // node.js - package.json
   if (
     fs.existsSync(path.join(src_dir, "package.json")) ||
     fs.existsSync(path.join(src_dir, "rush.json"))
