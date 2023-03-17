@@ -1,6 +1,6 @@
 {
   "name": "@joernio/astgen",
-  "version": "2.17.0",
+  "version": "2.18.0",
   "description": "Generate JS/TS AST in json format with Babel",
   "exports": "./index.js",
   "keywords": [
