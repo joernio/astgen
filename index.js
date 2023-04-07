@@ -26,7 +26,7 @@ const IGNORE_DIRS = [
   "build",
 ];
 
-const IGNORE_FILE_PATTERN = new RegExp("(conf|test|spec)\\.(js|ts)$", "i");
+const IGNORE_FILE_PATTERN = new RegExp("(conf|test|spec|\\.d)\\.(js|ts)$", "i");
 
 const getAllFiles = (dir, extn, files, result, regex) => {
   files = files || fs.readdirSync(dir);
@@ -137,7 +137,6 @@ const toVueAst = (file) => {
   );
 };
 
-
 function createTsc(srcFiles) {
   try {
     const program = tsc.createProgram(srcFiles, {
@@ -158,7 +157,7 @@ function createTsc(srcFiles) {
       }
     }
 
-    function safeTypeToString(node, context) {
+    function safeTypeWithContextToString(node, context) {
       try {
         return typeChecker.typeToString(node, context,
           tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
@@ -185,10 +184,10 @@ function createTsc(srcFiles) {
         if (funcSignature) {
           typeStr = safeTypeToString(funcSignature.getReturnType());
         } else {
-          typeStr = safeTypeToString(typeChecker.getTypeAtLocation(node), node);
+          typeStr = safeTypeWithContextToString(typeChecker.getTypeAtLocation(node), node);
         }
       } else {
-        typeStr = safeTypeToString(typeChecker.getTypeAtLocation(node), node);
+        typeStr = safeTypeWithContextToString(typeChecker.getTypeAtLocation(node), node);
       }
       seenTypes.set(node.getStart(), typeStr);
       tsc.forEachChild(node, addType);
@@ -205,7 +204,6 @@ function createTsc(srcFiles) {
     return undefined;
   }
 }
-
 
 /**
  * Generate AST for JavaScript or TypeScript
@@ -231,6 +229,7 @@ const createJSAst = async (options) => {
           const tsAst = ts.program.getSourceFile(file);
           tsc.forEachChild(tsAst, ts.addType);
           writeTypesFile(file, ts.seenTypes, options);
+          ts.seenTypes.clear();
         } catch (err) {
           console.warn("Retrieving types", file, ":", err.message);
         }
@@ -257,7 +256,6 @@ const createVueAst = async (options) => {
     }
   }
 };
-
 
 /**
  * Deal with cyclic reference in json
@@ -313,7 +311,6 @@ const writeTypesFile = (file, seenTypes, options) => {
   console.log("Converted types for", relativePath, "to", outTypeFile);
 };
 
-
 const createXAst = async (options) => {
   const src_dir = options.src;
   try {
@@ -328,7 +325,7 @@ const createXAst = async (options) => {
   ) {
     return await createJSAst(options);
   }
-  console.error(src_dir, "unkown project type");
+  console.error(src_dir, "unknown project type");
   process.exit(1);
 };
 
