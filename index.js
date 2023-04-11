@@ -199,7 +199,7 @@ function createTsc(srcFiles) {
             } else {
                 typeStr = safeTypeWithContextToString(typeChecker.getTypeAtLocation(node), node);
             }
-            seenTypes.set(node.getStart(), typeStr);
+            if (typeStr !== "any") seenTypes.set(node.getStart(), typeStr);
             tsc.forEachChild(node, addType);
         }
 
@@ -283,14 +283,6 @@ const getCircularReplacer = () => {
     };
 };
 
-function mapToObj(map) {
-    let obj = Object.create(null);
-    for (let [k, v] of map) {
-        obj[k.toString()] = v;
-    }
-    return obj;
-}
-
 /**
  * Write AST data to a json file
  */
@@ -316,7 +308,7 @@ const writeTypesFile = (file, seenTypes, options) => {
     fs.mkdirSync(path.dirname(outTypeFile), {recursive: true});
     fs.writeFileSync(
         outTypeFile,
-        JSON.stringify(mapToObj(seenTypes))
+        JSON.stringify(Object.fromEntries(seenTypes), undefined, "  ")
     );
     console.log("Converted types for", relativePath, "to", outTypeFile);
 };
