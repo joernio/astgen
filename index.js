@@ -85,6 +85,24 @@ const babelParserOptions = {
     ],
 };
 
+const babelSafeParserOptions = {
+    sourceType: "module",
+    allowImportExportEverywhere: true,
+    allowAwaitOutsideFunction: true,
+    allowReturnOutsideFunction: true,
+    errorRecovery: true,
+    plugins: [
+        "optionalChaining",
+        "classProperties",
+        "decorators-legacy",
+        "exportDefaultFrom",
+        "doExpressions",
+        "numericSeparator",
+        "dynamicImport",
+        "typescript",
+    ],
+};
+
 /**
  * Return paths to all (j|tsx?) files.
  */
@@ -101,11 +119,35 @@ const getAllSrcJSAndTSFiles = (src) =>
 /**
  * Convert a single JS/TS file to AST
  */
-const toJSAst = (file) => {
-    return babelParser.parse(
-        fs.readFileSync(file, "utf-8"),
-        babelParserOptions
-    );
+const fileToJsAst = (file) => {
+    try {
+        return babelParser.parse(
+            fs.readFileSync(file, "utf-8"),
+            babelParserOptions
+        );
+    } catch {
+        return babelParser.parse(
+            fs.readFileSync(file, "utf-8"),
+            babelSafeParserOptions
+        );
+    }
+};
+
+/**
+ * Convert a single JS/TS code snippet to AST
+ */
+const codeToJsAst = (code) => {
+    try {
+        return babelParser.parse(
+            code,
+            babelParserOptions
+        );
+    } catch {
+        return babelParser.parse(
+            code,
+            babelSafeParserOptions
+        );
+    }
 };
 
 const vueCleaningRegex = /<\/*script.*>|<style[\s\S]*style>|<\/*br>/ig;
@@ -141,10 +183,7 @@ const toVueAst = (file) => {
                     .replaceAll("}}", " }") +
                 grC
         });
-    return babelParser.parse(
-        cleanedCode,
-        babelParserOptions
-    );
+    return codeToJsAst(cleanedCode);
 };
 
 function createTsc(srcFiles) {
@@ -229,7 +268,7 @@ const createJSAst = async (options) => {
 
         for (const file of srcFiles) {
             try {
-                const ast = toJSAst(file);
+                const ast = fileToJsAst(file);
                 writeAstFile(file, ast, options);
             } catch (err) {
                 console.error(file, err.message);
