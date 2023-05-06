@@ -18,7 +18,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: '18'
           cache: 'yarn'
       - name: Install ldid
         uses: MOZGIII/install-ldid-action@v1
@@ -42,6 +42,7 @@ jobs:
       - name: Rename
         run: |
           mv astgen-linux-x64 astgen-linux
+          mv astgen-linux-arm64 astgen-linux-arm
           mv astgen-macos-x64 astgen-macos
           mv astgen-macos-arm64 astgen-macos-arm
           mv astgen-win-x64.exe astgen-win.exe
@@ -50,6 +51,7 @@ jobs:
           chmod +x astgen-macos
           chmod +x astgen-macos-arm
           chmod +x astgen-linux
+          chmod +x astgen-linux-arm
       - name: Set next release version
         id: taggerFinal
         uses: anothrNick/github-tag-action@1.61.0
@@ -65,3 +67,4 @@ jobs:
             astgen-macos
             astgen-macos-arm
             astgen-linux
+            astgen-linux-arm
