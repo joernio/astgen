@@ -1,6 +1,6 @@
 {
   "name": "@joernio/astgen",
-  "version": "2.23.0",
+  "version": "3.0.0",
   "description": "Generate JS/TS AST in json format with Babel",
   "exports": "./index.js",
   "keywords": [
@@ -14,12 +14,12 @@
   "author": "Max Leuthaeuser",
   "license": "Apache-2.0",
   "dependencies": {
-    "@babel/parser": "^7.20.13",
-    "typescript": "^4.9.4",
-    "yargs": "^17.6.2"
+    "@babel/parser": "^7.21.8",
+    "typescript": "^5.0.4",
+    "yargs": "^17.7.2"
   },
   "scripts": {
-    "postinstall": "pkg . --no-bytecode --no-native-build --public --compress GZip --targets node16-linux-x64,node16-macos-x64,node16-win-x64,node16-macos-arm64"
+    "postinstall": "pkg . --no-bytecode --no-native-build --public --compress GZip --targets node18-linux-x64,node18-linux-arm64,node18-macos-x64,node18-win-x64,node18-macos-arm64"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -30,6 +30,6 @@
   ],
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "pkg": "^5.8.0"
+    "pkg": "^5.8.1"
   }
 }
