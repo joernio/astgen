@@ -192,9 +192,20 @@ const toVueAst = (file) => {
 function createTsc(srcFiles) {
     try {
         const program = tsc.createProgram(srcFiles, {
-            target: tsc.ScriptTarget.ES6,
+            target: tsc.ScriptTarget.ES2020,
             module: tsc.ModuleKind.CommonJS,
-            allowJs: true
+            allowJs: true,
+            allowUnreachableCode: true,
+            allowUnusedLabels: true,
+            alwaysStrict: false,
+            emitDecoratorMetadata: true,
+            exactOptionalPropertyTypes: true,
+            experimentalDecorators: false,
+            ignoreDeprecations: true,
+            noStrictGenericChecks: true,
+            noUncheckedIndexedAccess: false,
+            noPropertyAccessFromIndexSignature: false,
+            removeComments: true
         });
         const typeChecker = program.getTypeChecker();
         const seenTypes = new Map();
@@ -241,7 +252,7 @@ function createTsc(srcFiles) {
             } else {
                 typeStr = safeTypeWithContextToString(typeChecker.getTypeAtLocation(node), node);
             }
-            if (typeStr !== "any") seenTypes.set(node.getStart(), typeStr);
+            if (!["any", "unknown", "any[]", "unknown[]"].includes(typeStr)) seenTypes.set(node.getStart(), typeStr);
             tsc.forEachChild(node, addType);
         }
 
