@@ -114,6 +114,7 @@ astgen-macos-arm64
 astgen-macos-x64
 astgen-win-x64.exe
 astgen-linux
+astgen-linux-arm64
 astgen-macos-arm
 astgen-macos
 astgen-win.exe
