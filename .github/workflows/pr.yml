@@ -1,6 +1,8 @@
 name: pr
 
-on: pull_request
+on:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -21,3 +23,22 @@ jobs:
           tag: v2.1.5-procursus6
       - name: Build
         run: yarn install
+      - name: Rename
+        run: |
+          mv astgen-linux-x64 astgen-linux
+          mv astgen-linux-arm64 astgen-linux-arm
+          mv astgen-macos-x64 astgen-macos
+          mv astgen-macos-arm64 astgen-macos-arm
+          mv astgen-win-x64.exe astgen-win.exe
+      - name: Make executable
+        run: |
+          chmod +x astgen-macos
+          chmod +x astgen-macos-arm
+          chmod +x astgen-linux
+          chmod +x astgen-linux-arm
+          gzexe astgen-linux
+          gzexe astgen-linux-arm
+          ls -lh
+          ./astgen-linux --version
+          mv astgen-linux~ astgen-linux-uncompressed
+          mv astgen-linux-arm~ astgen-linux-arm-uncompressed
