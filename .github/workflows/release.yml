@@ -52,6 +52,10 @@ jobs:
           chmod +x astgen-macos-arm
           chmod +x astgen-linux
           chmod +x astgen-linux-arm
+          gzexe astgen-linux
+          gzexe astgen-linux-arm
+          mv astgen-linux~ astgen-linux-uncompressed
+          mv astgen-linux-arm~ astgen-linux-arm-uncompressed
       - name: Set next release version
         id: taggerFinal
         uses: anothrNick/github-tag-action@1.61.0
@@ -68,3 +72,5 @@ jobs:
             astgen-macos-arm
             astgen-linux
             astgen-linux-arm
+            astgen-linux-uncompressed
+            astgen-linux-arm-uncompressed

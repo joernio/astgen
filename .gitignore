@@ -110,11 +110,14 @@ dist
 .idea/
 test/obj
 astgen-linux-x64
+astgen-linux-x64~
 astgen-macos-arm64
 astgen-macos-x64
 astgen-win-x64.exe
 astgen-linux
+astgen-linux~
 astgen-linux-arm64
+astgen-linux-arm64~
 astgen-macos-arm
 astgen-macos
 astgen-win.exe
