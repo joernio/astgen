@@ -26,7 +26,7 @@ const IGNORE_DIRS = [
     "build",
 ];
 
-const IGNORE_FILE_PATTERN = new RegExp("(conf|test|spec|\\.d)\\.(js|ts|jsx|tsx)$", "i");
+const IGNORE_FILE_PATTERN = new RegExp("(conf|test|spec|min|\\.d)\\.(js|ts|jsx|tsx)$", "i");
 
 const getAllFiles = (dir, extn, files, result, regex) => {
     files = files || fs.readdirSync(dir);
