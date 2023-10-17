@@ -46,16 +46,19 @@ jobs:
           mv astgen-macos-x64 astgen-macos
           mv astgen-macos-arm64 astgen-macos-arm
           mv astgen-win-x64.exe astgen-win.exe
+      - name: Compress
+        run: |
+          gzexe astgen-linux
+          gzexe astgen-linux-arm
+          gzexe astgen-macos
+          gzexe astgen-macos-arm
+          gzexe astgen-win.exe
       - name: Make executable
         run: |
           chmod +x astgen-macos
           chmod +x astgen-macos-arm
           chmod +x astgen-linux
           chmod +x astgen-linux-arm
-          gzexe astgen-linux
-          gzexe astgen-linux-arm
-          mv astgen-linux~ astgen-linux-uncompressed
-          mv astgen-linux-arm~ astgen-linux-arm-uncompressed
       - name: Set next release version
         id: taggerFinal
         uses: anothrNick/github-tag-action@1.61.0
@@ -72,5 +75,3 @@ jobs:
             astgen-macos-arm
             astgen-linux
             astgen-linux-arm
-            astgen-linux-uncompressed
-            astgen-linux-arm-uncompressed

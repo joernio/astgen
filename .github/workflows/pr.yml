@@ -30,15 +30,12 @@ jobs:
           mv astgen-macos-x64 astgen-macos
           mv astgen-macos-arm64 astgen-macos-arm
           mv astgen-win-x64.exe astgen-win.exe
-      - name: Make executable
+      - name: Compress
         run: |
-          chmod +x astgen-macos
-          chmod +x astgen-macos-arm
-          chmod +x astgen-linux
-          chmod +x astgen-linux-arm
           gzexe astgen-linux
           gzexe astgen-linux-arm
+          gzexe astgen-macos
+          gzexe astgen-macos-arm
+          gzexe astgen-win.exe
           ls -lh
           ./astgen-linux --version
-          mv astgen-linux~ astgen-linux-uncompressed
-          mv astgen-linux-arm~ astgen-linux-arm-uncompressed
