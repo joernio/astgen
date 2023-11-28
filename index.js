@@ -157,7 +157,7 @@ const vueCleaningRegex = /<\/*script.*>|<style[\s\S]*style>|<\/*br>/ig;
 const vueTemplateRegex = /(<template.*>)([\s\S]*)(<\/template>)/ig;
 const vueCommentRegex = /<\!--[\s\S]*?-->/ig;
 const vueBindRegex = /(:\[)([\s\S]*?)(\])/ig;
-const vuePropRegex = /\s([.:@])([a-zA-Z]*?=)/ig;
+const vuePropRegex = /\s([.:@])([\s\S]*?=)/ig;
 
 /**
  * Convert a single vue file to AST
@@ -186,6 +186,7 @@ const toVueAst = (file) => {
                     .replaceAll("}}", " }") +
                 grC
         });
+    console.log(cleanedCode)
     return codeToJsAst(cleanedCode);
 };
 
