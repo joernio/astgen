@@ -176,12 +176,11 @@ const toVueAst = (file) => {
                 grB +
                 grC.replaceAll(/\S/g, " ")
         })
-        .replace(vuePropRegex, function (match, grA, grB) {
-            return " " + grA.replace(/[.:@]/g, " ") + grB
-        })
         .replace(vueTemplateRegex, function (match, grA, grB, grC) {
             return grA +
-                grB
+                grB.replace(vuePropRegex, function (match, grA, grB) {
+                    return " " + grA.replace(/[.:@]/g, " ") + grB.replaceAll(".", "-")
+                    })
                     .replaceAll("{{", "{ ")
                     .replaceAll("}}", " }") +
                 grC
