@@ -186,7 +186,6 @@ const toVueAst = (file) => {
                     .replaceAll("}}", " }") +
                 grC
         });
-    console.log(cleanedCode)
     return codeToJsAst(cleanedCode);
 };
 
