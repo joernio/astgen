@@ -156,8 +156,8 @@ const codeToJsAst = (code) => {
 const vueCleaningRegex = /<\/*script.*>|<style[\s\S]*style>|<\/*br>/ig;
 const vueTemplateRegex = /(<template.*>)([\s\S]*)(<\/template>)/ig;
 const vueCommentRegex = /<\!--[\s\S]*?-->/ig;
-const vueBindRegex = /(:\[)([\s\S]*?)(\])/ig;
-const vuePropRegex = /\s([.:@])([\s\S]*?=)/ig;
+const vueBindRegex = /(:\[)([\S]*?)(\])/ig;
+const vuePropRegex = /\s([.:@])([\S]*?=)/ig;
 
 /**
  * Convert a single vue file to AST
