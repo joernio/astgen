@@ -27,14 +27,32 @@ const IGNORE_DIRS = [
 ];
 
 const IGNORE_FILE_PATTERN = new RegExp("(conf|test|spec|[.-]min|\\.d)\\.(js|ts|jsx|tsx)$", "i");
+const MAX_LOC_IN_FILE = 50000;
 
-const getAllFiles = (dir, extn, files, result, regex) => {
-    files = files || fs.readdirSync(dir);
-    result = result || [];
-    regex = regex || new RegExp(`\\${extn}$`);
+function countFileLines(filePath){
+  return new Promise((resolve, reject) => {
+    let lineCount = 0;
+    fs.createReadStream(filePath)
+      .on("data", (buffer) => {
+        let idx = -1;
+        lineCount--; // Because the loop will run once for idx=-1
+        do {
+          idx = buffer.indexOf(10, idx+1);
+          lineCount++;
+        } while (idx !== -1);
+      }).on("end", () => {
+        resolve(lineCount);
+      }).on("error", reject);
+    });
+};
 
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+async function getAllFiles(dir, extn, files, result, regex) {
+    var allFiles = files || fs.readdirSync(dir);
+    var allResults = result || [];
+    var extRegex = regex || new RegExp(`\\${extn}$`);
+
+    for (let i = 0; i < allFiles.length; i++) {
+        const file = allFiles[i];
         if (
             file.startsWith(".") ||
             file.startsWith("__") ||
@@ -54,16 +72,19 @@ const getAllFiles = (dir, extn, files, result, regex) => {
                 continue;
             }
             try {
-                result = getAllFiles(fileWithDir, extn, fs.readdirSync(fileWithDir), result, regex);
+                allResults = await getAllFiles(fileWithDir, extn, fs.readdirSync(fileWithDir), allResults, extRegex);
             } catch (error) {
             }
         } else {
-            if (regex.test(fileWithDir)) {
-                result.push(fileWithDir);
+            let lines = await countFileLines(fileWithDir);
+            if (extRegex.test(fileWithDir)) {
+                if (lines > MAX_LOC_IN_FILE) {
+                    console.warn(fileWithDir, "more than", MAX_LOC_IN_FILE, "lines of code");   
+                } else allResults.push(fileWithDir);
             }
         }
     }
-    return result;
+    return allResults;
 };
 
 const babelParserOptions = {
