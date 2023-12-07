@@ -179,6 +179,7 @@ const vueTemplateRegex = /(<template.*>)([\s\S]*)(<\/template>)/ig;
 const vueCommentRegex = /<\!--[\s\S]*?-->/ig;
 const vueBindRegex = /(:\[)([\S]*?)(\])/ig;
 const vuePropRegex = /\s([.:@])([\S]*?=)/ig;
+const vueOpenImgTag = /(<img)((?!>)[\s\S]+?)( [^\/]>)/ig;
 
 /**
  * Convert a single vue file to AST
@@ -200,7 +201,10 @@ const toVueAst = (file) => {
         .replace(vueTemplateRegex, function (match, grA, grB, grC) {
             return grA +
                 grB.replace(vuePropRegex, function (match, grA, grB) {
-                    return " " + grA.replace(/[.:@]/g, " ") + grB.replaceAll(".", "-")
+                        return " " + grA.replace(/[.:@]/g, " ") + grB.replaceAll(".", "-")
+                    })
+                    .replace(vueOpenImgTag, function (match, grA, grB, grC) {
+                        return grA + grB + grC.replace(" >", "/>")
                     })
                     .replaceAll("{{", "{ ")
                     .replaceAll("}}", " }") +
@@ -327,7 +331,7 @@ const createJSAst = async (options) => {
  * Generate AST for .vue files
  */
 const createVueAst = async (options) => {
-    const srcFiles = getAllFiles(options.src, ".vue");
+    const srcFiles = await getAllFiles(options.src, ".vue");
     for (const file of srcFiles) {
         try {
             const ast = toVueAst(file);
