@@ -308,18 +308,18 @@ const createJSAst = async (options) => {
             try {
                 const ast = fileToJsAst(file);
                 writeAstFile(file, ast, options);
-            } catch (err) {
-                console.error(file, err.message);
-            }
-            if (ts) {
-                try {
-                    const tsAst = ts.program.getSourceFile(file);
-                    tsc.forEachChild(tsAst, ts.addType);
-                    writeTypesFile(file, ts.seenTypes, options);
-                    ts.seenTypes.clear();
-                } catch (err) {
-                    console.warn("Retrieving types", file, ":", err.message);
+                if (ts) {
+                    try {
+                        const tsAst = ts.program.getSourceFile(file);
+                        tsc.forEachChild(tsAst, ts.addType);
+                        writeTypesFile(file, ts.seenTypes, options);
+                        ts.seenTypes.clear();
+                    } catch (err) {
+                        console.warn("Retrieving types", file, ":", err.message);
+                    }
                 }
+            } catch (err) {
+                console.error("Parsing", file, ":", err.message);
             }
         }
     } catch (err) {
