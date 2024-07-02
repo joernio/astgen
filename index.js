@@ -305,6 +305,10 @@ const createJSAst = async (options) => {
         }
 
         for (const file of srcFiles) {
+            if (fs.readFileSync(file, "utf-8").toString().includes("// EMSCRIPTEN_START_ASM")) {
+                console.warn("Parsing", file, ":", "File skipped as it contains EMSCRIPTEN code");
+                continue;
+            }
             try {
                 const ast = fileToJsAst(file);
                 writeAstFile(file, ast, options);
