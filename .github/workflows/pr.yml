@@ -9,18 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: '0'
       - name: Install node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'yarn'
-      - name: Install ldid
-        uses: MOZGIII/install-ldid-action@v1
-        with:
-          tag: v2.1.5-procursus6
       - name: Build
         run: yarn install
       - name: Rename
@@ -30,15 +26,22 @@ jobs:
           mv astgen-macos-x64 astgen-macos
           mv astgen-macos-arm64 astgen-macos-arm
           mv astgen-win-x64.exe astgen-win.exe
+      - name: Run gzexe
+        run: |
+          gzexe astgen-linux
+          gzexe astgen-linux-arm
+          gzexe astgen-macos
+          gzexe astgen-macos-arm
+          gzexe astgen-win.exe
       - name: Make executable
         run: |
           chmod +x astgen-macos
           chmod +x astgen-macos-arm
           chmod +x astgen-linux
           chmod +x astgen-linux-arm
-          gzexe astgen-linux
-          gzexe astgen-linux-arm
+      - name: Print stats
+        run: |
           ls -lh
+      - name: Print version
+        run: |
           ./astgen-linux --version
-          mv astgen-linux~ astgen-linux-uncompressed
-          mv astgen-linux-arm~ astgen-linux-arm-uncompressed
