@@ -1,6 +1,6 @@
 {
   "name": "@joernio/astgen",
-  "version": "3.16.0",
+  "version": "3.17.0",
   "description": "Generate JS/TS AST in json format with Babel",
   "exports": "./index.js",
   "keywords": [
@@ -19,7 +19,12 @@
     "yargs": "^17.7.2"
   },
   "scripts": {
-    "postinstall": "pkg . --options max-old-space-size=8192 --no-bytecode --no-native-build --public --compress GZip --targets node18-linux-x64,node18-linux-arm64,node18-macos-x64,node18-win-x64,node18-macos-arm64"
+    "build_win": "bun build --compile --target=bun-windows-x64 --minify --sourcemap --bytecode ./bin/astgen.js --outfile astgen-win-x64.exe",
+    "build_linux": "bun build --compile --target=bun-linux-x64 --minify --sourcemap --bytecode ./bin/astgen.js --outfile astgen-linux-x64",
+    "build_linux_arm": "bun build --compile --target=bun-linux-arm64 --minify --sourcemap --bytecode ./bin/astgen.js --outfile astgen-linux-arm64",
+    "build_macos": "bun build --compile --target=bun-darwin-x64 --minify --sourcemap --bytecode ./bin/astgen.js --outfile astgen-macos-x64",
+    "build_macos_arm": "bun build --compile --target=bun-darwin-arm64 --minify --sourcemap --bytecode ./bin/astgen.js --outfile astgen-macos-arm64",
+    "postinstall": "yarn build_win && yarn build_linux && yarn build_linux_arm && yarn build_macos && yarn build_macos_arm"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -30,6 +35,6 @@
   ],
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "pkg": "^5.8.1"
+    "bun": "1.1.29"
   }
 }
