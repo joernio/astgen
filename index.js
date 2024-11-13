@@ -368,7 +368,7 @@ const getCircularReplacer = () => {
  * Write AST data to a json file
  */
 const writeAstFile = (file, ast, options) => {
-    const relativePath = file.replace(new RegExp("^" + options.src + "/"), "");
+    const relativePath = path.relative(options.src, file)
     const outAstFile = path.join(options.output, relativePath + ".json");
     const data = {
         fullName: file,
@@ -384,7 +384,7 @@ const writeAstFile = (file, ast, options) => {
 };
 
 const writeTypesFile = (file, seenTypes, options) => {
-    const relativePath = file.replace(new RegExp("^" + options.src + "/"), "");
+    const relativePath = path.relative(options.src, file)
     const outTypeFile = path.join(options.output, relativePath + ".typemap");
     fs.mkdirSync(path.dirname(outTypeFile), {recursive: true});
     fs.writeFileSync(
