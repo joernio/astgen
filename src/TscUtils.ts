@@ -1,0 +1,65 @@
+import * as Defaults from "./Defaults.js";
+
+import tsc from "typescript";
+
+export interface TscResult {
+    program: tsc.Program,
+    typeChecker: tsc.TypeChecker,
+    addType: (node: tsc.Node) => (void),
+    seenTypes: Map<number, string>
+}
+
+export function tscForFiles(srcFiles: string[]): TscResult {
+    const program = tsc.createProgram(srcFiles, Defaults.DEFAULT_TSC_OPTIONS);
+    const typeChecker = program.getTypeChecker();
+    const seenTypes = new Map<number, string>();
+
+    function safeTypeToString(node: tsc.Type): string {
+        try {
+            return typeChecker.typeToString(node, undefined, tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias);
+        } catch (err) {
+            return "any";
+        }
+    }
+
+    function safeTypeWithContextToString(node: tsc.Type, context: tsc.Node): string {
+        try {
+            return typeChecker.typeToString(node, context, tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias);
+        } catch (err) {
+            return "any";
+        }
+    }
+
+    function addType(node: tsc.Node) {
+        let typeStr;
+        if (tsc.isSetAccessor(node) ||
+            tsc.isGetAccessor(node) ||
+            tsc.isConstructSignatureDeclaration(node) ||
+            tsc.isMethodDeclaration(node) ||
+            tsc.isFunctionDeclaration(node) ||
+            tsc.isConstructorDeclaration(node)) {
+            const signature: tsc.Signature = typeChecker.getSignatureFromDeclaration(node)!;
+            const returnType = typeChecker.getReturnTypeOfSignature(signature);
+            typeStr = safeTypeToString(returnType);
+        } else if (tsc.isFunctionLike(node)) {
+            const funcType = typeChecker.getTypeAtLocation(node);
+            const funcSignature = typeChecker.getSignaturesOfType(funcType, tsc.SignatureKind.Call)[0];
+            if (funcSignature) {
+                typeStr = safeTypeToString(funcSignature.getReturnType());
+            } else {
+                typeStr = safeTypeWithContextToString(typeChecker.getTypeAtLocation(node), node);
+            }
+        } else {
+            typeStr = safeTypeWithContextToString(typeChecker.getTypeAtLocation(node), node);
+        }
+        if (!["any", "unknown", "any[]", "unknown[]"].includes(typeStr)) seenTypes.set(node.getStart(), typeStr);
+        tsc.forEachChild(node, addType);
+    }
+
+    return {
+        program: program,
+        typeChecker: typeChecker,
+        addType: addType,
+        seenTypes: seenTypes
+    };
+}
