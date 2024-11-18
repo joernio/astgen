@@ -108,6 +108,20 @@
   resolved "https://registry.yarnpkg.com/@tsconfig/node16/-/node16-16.1.3.tgz#94c1f4c72e8a6af81cb50b379334887b1a2476de"
   integrity sha512-9nTOUBn+EMKO6rtSZJk+DcqsfgtlERGT9XPJ5PRj/HNENPCBY1yu/JEj5wT6GLtbCLBO2k46SeXDaY0pjMqypw==
 
+"@types/n-readlines@^1.0.6":
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/@types/n-readlines/-/n-readlines-1.0.6.tgz#8c03c9b1a4925d847ccf55c354fc86cbe556acc6"
+  integrity sha512-0kCJ/bVdHl0yxNYbiGTInj8BPqVLMiUp4gn4zfyYJgKn0iQKiJ+mNGCJj2rFLupOrZ5y/W5l13YhOZ8jYG9DIA==
+  dependencies:
+    "@types/node" "*"
+
+"@types/node@*":
+  version "22.9.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.9.0.tgz#b7f16e5c3384788542c72dc3d561a7ceae2c0365"
+  integrity sha512-vuyHg81vvWA1Z1ELfvLko2c8f34gyA0zaic0+Rllc5lbCnbSyuvb2Oxpm6TAUAC/2xZN3QGqxBNggD1nNR2AfQ==
+  dependencies:
+    undici-types "~6.19.8"
+
 "@types/node@^16.1.3":
   version "16.18.119"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.18.119.tgz#88443bb82119b7c0920e86949673876cbe1c3492"
@@ -541,6 +555,11 @@ multistream@^4.1.0:
     once "^1.4.0"
     readable-stream "^3.6.0"
 
+n-readlines@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/n-readlines/-/n-readlines-1.0.1.tgz#bbb7364d38bc31a170a199f986fcacfa76b95f6e"
+  integrity sha512-z4SyAIVgMy7CkgsoNw7YVz40v0g4+WWvvqy8+ZdHrCtgevcEO758WQyrYcw3XPxcLxF+//RszTz/rO48nzD0wQ==
+
 napi-build-utils@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/napi-build-utils/-/napi-build-utils-1.0.2.tgz#b1fddc0b2c46e380a0b7a76f984dd47c41a13806"
@@ -698,6 +717,11 @@ readable-stream@^3.1.1, readable-stream@^3.4.0, readable-stream@^3.6.0:
     inherits "^2.0.3"
     string_decoder "^1.1.1"
     util-deprecate "^1.0.1"
+
+readdirp@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/readdirp/-/readdirp-4.0.2.tgz#388fccb8b75665da3abffe2d8f8ed59fe74c230a"
+  integrity sha512-yDMz9g+VaZkqBYS/ozoBJwaBhTbZo3UNYQHNRw1D3UFQB8oHB4uS/tAODO+ZLjGWmUbKnIlOWO+aaIiAxrUWHA==
 
 require-directory@^2.1.1:
   version "2.1.1"
@@ -874,6 +898,11 @@ typescript@^5.5.3:
   version "5.6.3"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.6.3.tgz#5f3449e31c9d94febb17de03cc081dd56d81db5b"
   integrity sha512-hjcS1mhfuyi4WW8IWtjP7brDrG2cuDZukyrYrSauoXGNgx0S7zceP07adYkJycEr56BOUTNPzbInooiN3fn1qw==
+
+undici-types@~6.19.8:
+  version "6.19.8"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-6.19.8.tgz#35111c9d1437ab83a7cdc0abae2f26d88eda0a02"
+  integrity sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==
 
 universalify@^2.0.0:
   version "2.0.1"

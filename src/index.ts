@@ -58,7 +58,7 @@ function createTsc(srcFiles: string[]): TscUtils.TscResult | undefined {
  */
 async function createJSAst(options: Options) {
     try {
-        const srcFiles = await FileUtils.filesWithExtensions(options.src, Defaults.JS_EXTENSIONS);
+        const srcFiles: string[] = await FileUtils.filesWithExtensions(options.src, Defaults.JS_EXTENSIONS);
         let ts: TscUtils.TscResult | undefined;
         if (options.tsTypes) {
             ts = createTsc(srcFiles);
@@ -95,7 +95,7 @@ async function createJSAst(options: Options) {
  * Generate AST for .vue files
  */
 async function createVueAst(options: Options) {
-    const srcFiles = await FileUtils.filesWithExtensions(options.src, [".vue"]);
+    const srcFiles: string[] = await FileUtils.filesWithExtensions(options.src, [".vue"]);
     for (const file of srcFiles) {
         try {
             const ast = toVueAst(file);
