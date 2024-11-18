@@ -38,7 +38,9 @@ jobs:
         run: |
           echo "The current tag is: ${{ steps.taggerDryRun.outputs.tag }}"
       - name: Build
-        run: yarn build install
+        run: |
+          yarn build
+          yarn install
       - name: Rename
         run: |
           mv astgen-linux-x64 astgen-linux
