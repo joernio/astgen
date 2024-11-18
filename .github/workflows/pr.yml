@@ -22,9 +22,7 @@ jobs:
         with:
           tag: v2.1.5-procursus6
       - name: Build
-        run: |
-          yarn build
-          yarn install
+        run: yarn install
       - name: Rename
         run: |
           mv astgen-linux-x64 astgen-linux
