@@ -20,6 +20,8 @@ Type maps are generated using the Typescript compiler / type checker API.
 
 ```bash
 yarn install
+yarn build
+yarn binary
 ```
 
 This will invoke `pgk` after `yarn install` and generates a native binary for Windows, MacOS, and Linux.
