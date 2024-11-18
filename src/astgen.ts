@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 
-const {start} = require("../index.js");
-const fs = require("fs");
-const path = require("path");
-const yargs = require("yargs");
-const {hideBin} = require("yargs/helpers");
+import start from "./index.js"
+import Options from "./Options.js"
 
-async function main(argvs) {
-    const args = yargs(hideBin(argvs))
+import path from "path"
+import yargs from "yargs"
+import {hideBin} from "yargs/helpers"
+
+async function main(argv: string[]) {
+    const args: Options = yargs(hideBin(argv))
         .option("src", {
             alias: "i",
             default: ".",
@@ -20,6 +21,7 @@ async function main(argvs) {
         })
         .option("type", {
             alias: "t",
+            type: "string",
             description: "Project type. Default auto-detect",
         })
         .option("recurse", {
@@ -34,17 +36,7 @@ async function main(argvs) {
             description: "Generate type mappings using the Typescript Compiler API",
         })
         .version()
-        .help("h").argv;
-
-    if (args.version) {
-        const packageJsonAsString = fs.readFileSync(
-            path.join(__dirname, "../", "package.json"),
-            "utf-8"
-        );
-        const packageJson = JSON.parse(packageJsonAsString);
-        console.log(packageJson.version);
-        process.exit(0);
-    }
+        .help("h").parseSync();
 
     try {
         if (args.output === "ast_out") {
