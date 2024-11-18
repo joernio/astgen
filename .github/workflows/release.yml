@@ -53,9 +53,6 @@ jobs:
         run: |
           gzexe astgen-linux
           gzexe astgen-linux-arm
-          gzexe astgen-macos
-          gzexe astgen-macos-arm
-          gzexe astgen-win.exe
       - name: Make executable
         run: |
           chmod +x astgen-macos
