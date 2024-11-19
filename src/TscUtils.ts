@@ -1,4 +1,4 @@
-import * as Defaults from "./Defaults.js";
+import * as Defaults from "./Defaults";
 
 import tsc from "typescript";
 

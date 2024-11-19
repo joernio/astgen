@@ -1,4 +1,4 @@
-import * as Defaults from "./Defaults.js";
+import * as Defaults from "./Defaults";
 
 import {readdirpPromise} from 'readdirp';
 import * as fs from "node:fs";
