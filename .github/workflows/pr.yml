@@ -25,6 +25,11 @@ jobs:
         run: |
           yarn install
           yarn build
+      - name: Test
+        run: |
+          yarn test
+      - name: Create Binaries
+        run: |
           yarn binary
       - name: Rename
         run: |

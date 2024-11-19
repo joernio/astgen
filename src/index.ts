@@ -1,14 +1,14 @@
-import Options from "./Options.js"
-import * as Defaults from "./Defaults.js"
-import * as FileUtils from "./FileUtils.js"
-import * as JsonUtils from "./JsonUtils.js"
-import * as VueCodeCleaner from "./VueCodeCleaner.js"
-import * as TscUtils from "./TscUtils.js"
+import Options from "./Options"
+import * as Defaults from "./Defaults"
+import * as FileUtils from "./FileUtils"
+import * as JsonUtils from "./JsonUtils"
+import * as VueCodeCleaner from "./VueCodeCleaner"
+import * as TscUtils from "./TscUtils"
 
 import * as babelParser from "@babel/parser"
 import * as babelTypes from "@babel/types"
 import tsc, {SourceFile} from "typescript"
-import path from "node:path"
+import * as path from "node:path"
 import * as fs from "node:fs"
 
 /**
