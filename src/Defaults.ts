@@ -31,7 +31,9 @@ export const IGNORE_DIRS: string[] = [
     "build",
 ];
 
-export const IGNORE_FILE_PATTERN: RegExp = new RegExp("(conf|test|spec|[.-]min|\\.d)\\.(js|ts|jsx|tsx)$", "i");
+export const IGNORE_FILE_PATTERN: RegExp =
+    new RegExp("(chunk-vendors|app~|mock|e2e|conf|test|spec|[.-]min|\\.d)\\.(js|ts|jsx|tsx)$", "i");
+
 export const MAX_LOC_IN_FILE: number = 50000;
 
 export const BABEL_PARSER_OPTIONS: babelParser.ParserOptions = {

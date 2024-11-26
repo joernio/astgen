@@ -3,5 +3,7 @@ export default interface Options {
     output: string,
     type?: string,
     recurse: boolean,
-    tsTypes: boolean
+    tsTypes: boolean,
+    "exclude-file": string[],
+    "exclude-regex"?: RegExp
 }

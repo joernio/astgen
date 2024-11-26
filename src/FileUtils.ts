@@ -1,8 +1,10 @@
+import Options from "./Options";
 import * as Defaults from "./Defaults";
 
 import {readdirpPromise} from 'readdirp';
 import * as fs from "node:fs";
 import nReadlines from "n-readlines";
+import * as path from "node:path"
 
 function countFileLines(filePath: string): number {
     const broadbandLines = new nReadlines(filePath);
@@ -13,9 +15,29 @@ function countFileLines(filePath: string): number {
     return lineNumber
 }
 
-function ignoreDirectory(dirName: string): boolean {
+function dirIsInIgnorePath(options: Options, fullPath: string, ignorePath: string): boolean {
+    if (path.isAbsolute(ignorePath)) {
+        return fullPath.startsWith(ignorePath)
+    } else {
+        const absIgnorePath = path.join(options.src, ignorePath)
+        return fullPath.startsWith(absIgnorePath)
+    }
+}
+
+function fileIsInIgnorePath(options: Options, fullPath: string, ignorePath: string): boolean {
+    if (path.isAbsolute(ignorePath)) {
+        return fullPath == ignorePath
+    } else {
+        const absIgnorePath = path.join(options.src, ignorePath)
+        return fullPath == absIgnorePath
+    }
+}
+
+function ignoreDirectory(options: Options, dirName: string, fullPath: string): boolean {
     return dirName.startsWith(".") ||
         dirName.startsWith("__") ||
+        options["exclude-file"].some((e: string) => dirIsInIgnorePath(options, fullPath, e)) ||
+        options["exclude-regex"]?.test(fullPath) ||
         Defaults.IGNORE_DIRS.includes(dirName.toLowerCase())
 }
 
@@ -35,19 +57,22 @@ function isTooLarge(fileWithDir: string): boolean {
     return false;
 }
 
-function ignoreFile(fileName: string, fileWithDir: string, extensions: string[]): boolean {
+function ignoreFile(options: Options, fileName: string, fullPath: string, extensions: string[]): boolean {
     return !extensions.some((e: string) => fileName.endsWith(e)) ||
         fileName.startsWith(".") ||
         fileName.startsWith("__") ||
         Defaults.IGNORE_FILE_PATTERN.test(fileName) ||
-        isEmscripten(fileWithDir) ||
-        isTooLarge(fileWithDir)
+        options["exclude-file"].some((e: string) => fileIsInIgnorePath(options, fullPath, e)) ||
+        options["exclude-regex"]?.test(fullPath) ||
+        isEmscripten(fullPath) ||
+        isTooLarge(fullPath)
 }
 
-export async function filesWithExtensions(dir: string, extensions: string[]): Promise<string[]> {
+export async function filesWithExtensions(options: Options, extensions: string[]): Promise<string[]> {
+    const dir = options.src
     const files = await readdirpPromise(dir, {
-        fileFilter: (f) => !ignoreFile(f.basename, f.fullPath, extensions),
-        directoryFilter: (d) => !ignoreDirectory(d.basename),
+        fileFilter: (f) => !ignoreFile(options, f.basename, f.fullPath, extensions),
+        directoryFilter: (d) => !ignoreDirectory(options, d.basename, d.fullPath),
         lstat: true
     });
     // @ts-ignore
