@@ -12,6 +12,9 @@ async function main(argv: string[]) {
         .option("src", {
             alias: "i",
             default: ".",
+            coerce: (arg: any): string => {
+                return path.resolve(arg.toString())
+            },
             description: "Source directory",
         })
         .option("output", {
@@ -34,6 +37,22 @@ async function main(argv: string[]) {
             default: true,
             type: "boolean",
             description: "Generate type mappings using the Typescript Compiler API",
+        })
+        .option("exclude-file", {
+            default: [],
+            type: "string",
+            array: true,
+            description: "Exclude this file. Can be specified multiple times. Default is empty."
+        })
+        .option("exclude-regex", {
+            coerce: (arg: any): RegExp | undefined => {
+                try {
+                    return new RegExp(arg.toString(), "i")
+                } catch (err) {
+                    return undefined;
+                }
+            },
+            description: "Exclude files matching this regex (matches the absolute path)."
         })
         .version()
         .help("h").parseSync();
