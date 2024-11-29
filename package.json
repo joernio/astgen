@@ -1,6 +1,6 @@
 {
   "name": "@joernio/astgen",
-  "version": "3.21.0",
+  "version": "3.22.0",
   "description": "Generate JS/TS AST in json format with Babel",
   "exports": "./index.js",
   "keywords": [
@@ -28,10 +28,10 @@
     "node": ">=16.0.0"
   },
   "files": [
-    "dist/**/*.js"
+    "./dist/**/*.js"
   ],
   "directories": {
-    "test": "test"
+    "test": "./test/"
   },
   "devDependencies": {
     "@tsconfig/node18": "^18.2.4",
