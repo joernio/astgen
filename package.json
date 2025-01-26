@@ -17,6 +17,7 @@
     "@babel/parser": "^7.24.7",
     "n-readlines": "^1.0.1",
     "readdirp": "^4.0.2",
+    "typescript": "^5.5.3",
     "yargs": "^17.7.2"
   },
   "scripts": {
@@ -42,7 +43,6 @@
     "cross-env": "^7.0.3",
     "jest": "^29.7.0",
     "pkg": "^5.8.1",
-    "ts-jest": "^29.2.5",
-    "typescript": "^5.5.3"
+    "ts-jest": "^29.2.5"
   }
 }
