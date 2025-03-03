@@ -49,10 +49,17 @@ jobs:
           mv astgen-macos-x64 astgen-macos
           mv astgen-macos-arm64 astgen-macos-arm
           mv astgen-win-x64.exe astgen-win.exe
-      - name: Run gzexe
+      - name: Run UPX
+        uses: crazy-max/ghaction-upx@v3
+        with:
+          version: latest
+          files: |
+            astgen-*
+          args: -fq --force-macos
+      - name: Run ldid
         run: |
-          gzexe astgen-linux
-          gzexe astgen-linux-arm
+          ldid -S astgen-macos
+          ldid -S astgen-macos-arm
       - name: Make executable
         run: |
           chmod +x astgen-macos

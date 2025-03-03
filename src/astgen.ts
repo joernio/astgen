@@ -25,7 +25,7 @@ async function main(argv: string[]) {
         .option("type", {
             alias: "t",
             type: "string",
-            description: "Project type. Default auto-detect",
+            description: "Project type (default is auto-detect)",
         })
         .option("recurse", {
             alias: "r",
@@ -42,7 +42,7 @@ async function main(argv: string[]) {
             default: [],
             type: "string",
             array: true,
-            description: "Exclude this file. Can be specified multiple times. Default is empty."
+            description: "Exclude this file (can be specified multiple times)"
         })
         .option("exclude-regex", {
             coerce: (arg: any): RegExp | undefined => {
@@ -52,9 +52,9 @@ async function main(argv: string[]) {
                     return undefined;
                 }
             },
-            description: "Exclude files matching this regex (matches the absolute path)."
+            description: "Exclude files matching this regex (matches the absolute path)"
         })
-        .version()
+        .version("3.24.0") // TODO: yargs is not able to read the version from the package.json when running on the bun runtime
         .help("h").parseSync();
 
     try {
