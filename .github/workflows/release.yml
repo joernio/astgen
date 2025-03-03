@@ -55,7 +55,7 @@ jobs:
           version: latest
           files: |
             astgen-*
-          args: -fq
+          args: -fq --force-macos
       - name: Make executable
         run: |
           chmod +x astgen-macos
