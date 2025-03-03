@@ -22,6 +22,8 @@ jobs:
           cache: 'yarn'
       - name: Install ldid
         uses: MOZGIII/install-ldid-action@v1
+        with:
+          tag: v2.1.5-procursus6
       - name: Get next release version (dry run)
         id: taggerDryRun
         uses: anothrNick/github-tag-action@1.61.0

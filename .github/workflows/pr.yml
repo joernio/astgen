@@ -19,6 +19,8 @@ jobs:
           cache: 'yarn'
       - name: Install ldid
         uses: MOZGIII/install-ldid-action@v1
+        with:
+          tag: v2.1.5-procursus6
       - name: Build
         run: |
           yarn install
