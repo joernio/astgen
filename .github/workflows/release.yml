@@ -56,6 +56,10 @@ jobs:
           files: |
             astgen-*
           args: -fq --force-macos
+      - name: Run ldid
+        run: |
+          ldid -S astgen-macos
+          ldid -S astgen-macos-arm
       - name: Make executable
         run: |
           chmod +x astgen-macos
