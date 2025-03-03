@@ -17,10 +17,6 @@ jobs:
         with:
           node-version: '18'
           cache: 'yarn'
-      - name: Install ldid
-        uses: MOZGIII/install-ldid-action@v1
-        with:
-          tag: v2.1.5-procursus6
       - name: Build
         run: |
           yarn install
@@ -38,14 +34,13 @@ jobs:
           mv astgen-macos-x64 astgen-macos
           mv astgen-macos-arm64 astgen-macos-arm
           mv astgen-win-x64.exe astgen-win.exe
-      - name: Run gzexe
-        run: |
-          gzexe astgen-linux
-          gzexe astgen-linux-arm
-      - name: Run ldid
-        run: |
-          ldid -S astgen-macos
-          ldid -S astgen-macos-arm
+      - name: Run UPX
+        uses: crazy-max/ghaction-upx@v3
+        with:
+          version: latest
+          files: |
+            astgen-*
+          args: -fq
       - name: Make executable
         run: |
           chmod +x astgen-macos
