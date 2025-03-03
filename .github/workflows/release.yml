@@ -22,8 +22,6 @@ jobs:
           cache: 'yarn'
       - name: Install ldid
         uses: MOZGIII/install-ldid-action@v1
-        with:
-          tag: v2.1.5-procursus6
       - name: Get next release version (dry run)
         id: taggerDryRun
         uses: anothrNick/github-tag-action@1.61.0
@@ -53,6 +51,10 @@ jobs:
         run: |
           gzexe astgen-linux
           gzexe astgen-linux-arm
+      - name: Run ldid
+        run: |
+          ldid -S astgen-macos
+          ldid -S astgen-macos-arm
       - name: Make executable
         run: |
           chmod +x astgen-macos
