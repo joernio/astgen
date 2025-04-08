@@ -6,6 +6,8 @@ export const JS_EXTENSIONS: string[] = [
     ".jsx",
     ".cjs",
     ".mjs",
+    ".xsjs",
+    ".xsjslib",
     ".ts",
     ".tsx"
 ]
@@ -32,7 +34,7 @@ export const IGNORE_DIRS: string[] = [
 ];
 
 export const IGNORE_FILE_PATTERN: RegExp =
-    new RegExp("(chunk-vendors|app~|mock|e2e|conf|test|spec|[.-]min|\\.d)\\.(js|ts|jsx|tsx)$", "i");
+    new RegExp("(chunk-vendors|app~|mock|e2e|conf|test|spec|[.-]min|\\.d)\\.(js|jsx|cjs|mjs|xsjs|xsjslib|ts|tsx)$", "i");
 
 export const MAX_LOC_IN_FILE: number = 50000;
 
