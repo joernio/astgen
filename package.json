@@ -1,6 +1,6 @@
 {
   "name": "@joernio/astgen",
-  "version": "3.24.0",
+  "version": "3.25.0",
   "description": "Generate JS/TS AST in json format with Babel",
   "exports": "./index.js",
   "keywords": [
@@ -21,7 +21,7 @@
     "typescript": "^5.5.3"
   },
   "scripts": {
-    "test": "jest --silent --config=\" jest.config.js\"",
+    "test": "jest --silent --config=jest.config.js",
     "build": "tsc --build",
     "binary": "pkg . --options max-old-space-size=8192 --no-bytecode --no-native-build --public --compress GZip --targets node18-linux-x64,node18-linux-arm64,node18-macos-x64,node18-win-x64,node18-macos-arm64"
   },
