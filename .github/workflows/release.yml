@@ -42,6 +42,9 @@ jobs:
           yarn install
           yarn build
           yarn binary
+      - name: Test
+        run: |
+          yarn test
       - name: Rename
         run: |
           mv astgen-linux-x64 astgen-linux
