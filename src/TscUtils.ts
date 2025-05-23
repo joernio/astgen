@@ -16,7 +16,7 @@ export function tscForFiles(srcFiles: string[]): TscResult {
 
     function safeTypeToString(node: tsc.Type): string {
         try {
-            return typeChecker.typeToString(node, undefined, tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias);
+            return typeChecker.typeToString(node, undefined, tsc.TypeFormatFlags.InTypeAlias);
         } catch (err) {
             return "any";
         }
@@ -24,7 +24,7 @@ export function tscForFiles(srcFiles: string[]): TscResult {
 
     function safeTypeWithContextToString(node: tsc.Type, context: tsc.Node): string {
         try {
-            return typeChecker.typeToString(node, context, tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias);
+            return typeChecker.typeToString(node, context, tsc.TypeFormatFlags.InTypeAlias);
         } catch (err) {
             return "any";
         }
