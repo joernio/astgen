@@ -1,6 +1,6 @@
 {
   "name": "@joernio/astgen",
-  "version": "3.26.0",
+  "version": "3.27.0",
   "description": "Generate JS/TS AST in json format with Babel",
   "exports": "./index.js",
   "keywords": [
@@ -18,7 +18,7 @@
     "n-readlines": "^1.0.1",
     "readdirp": "^4.0.2",
     "yargs": "^17.7.2",
-    "typescript": "^5.5.3"
+    "typescript": "^5.8.3"
   },
   "scripts": {
     "test": "jest --silent --config=jest.config.js",
