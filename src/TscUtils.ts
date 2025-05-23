@@ -16,15 +16,7 @@ export function tscForFiles(srcFiles: string[]): TscResult {
 
     function safeTypeToString(node: tsc.Type): string {
         try {
-            return typeChecker.typeToString(node, undefined, tsc.TypeFormatFlags.InTypeAlias);
-        } catch (err) {
-            return "any";
-        }
-    }
-
-    function safeTypeWithContextToString(node: tsc.Type, context: tsc.Node): string {
-        try {
-            return typeChecker.typeToString(node, context, tsc.TypeFormatFlags.InTypeAlias);
+            return typeChecker.typeToString(node, undefined, tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias);
         } catch (err) {
             return "any";
         }
@@ -47,10 +39,10 @@ export function tscForFiles(srcFiles: string[]): TscResult {
             if (funcSignature) {
                 typeStr = safeTypeToString(funcSignature.getReturnType());
             } else {
-                typeStr = safeTypeWithContextToString(typeChecker.getTypeAtLocation(node), node);
+                typeStr = safeTypeToString(typeChecker.getTypeAtLocation(node));
             }
         } else {
-            typeStr = safeTypeWithContextToString(typeChecker.getTypeAtLocation(node), node);
+            typeStr = safeTypeToString(typeChecker.getTypeAtLocation(node));
         }
         if (!["any", "unknown", "any[]", "unknown[]"].includes(typeStr)) seenTypes.set(node.getStart(), typeStr);
         tsc.forEachChild(node, addType);
