@@ -29,7 +29,7 @@ describe('astgen basic functionality', () => {
         expect(resultAst).toContain("\"fullName\":\"" + testFile.replaceAll("\\", "\\\\") + "\"");
         expect(resultAst).toContain("\"relativeName\":\"main.js\"");
         const resultTypes = fs.readFileSync(path.join(tmpDir, "ast_out", "main.js.typemap")).toString();
-        expect(resultTypes).toEqual("{\"17\":\"NodeRequire\",\"25\":\"\\\"../../package.json\\\"\",\"64\":\"\\\"Something\\\"\",\"70\":\"\\\"Something\\\"\",\"99\":\"{ foo: string; }\",\"105\":\"{ foo: string; }\",\"119\":\"string\",\"146\":\"{ foo: any; }\",\"160\":\"{ foo: string; }\",\"164\":\"string\",\"179\":\"{ exports: { foo: any; }; }\",\"186\":\"{ foo: any; }\",\"196\":\"{ foo: string; }\"}");
+        expect(resultTypes).toEqual("{\"17\":\"Require\",\"25\":\"\\\"../../package.json\\\"\",\"64\":\"\\\"Something\\\"\",\"70\":\"\\\"Something\\\"\",\"99\":\"{ foo: string; }\",\"105\":\"{ foo: string; }\",\"119\":\"string\",\"146\":\"{ foo: any; }\",\"160\":\"{ foo: string; }\",\"164\":\"string\",\"179\":\"{ exports: { foo: any; }; }\",\"186\":\"{ foo: any; }\",\"196\":\"{ foo: string; }\"}");
 
         fs.rmSync(tmpDir, {recursive: true});
     });

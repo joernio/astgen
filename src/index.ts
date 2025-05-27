@@ -6,7 +6,6 @@ import * as VueCodeCleaner from "./VueCodeCleaner"
 import * as TscUtils from "./TscUtils"
 
 import * as babelParser from "@babel/parser"
-import * as babelTypes from "@babel/types"
 import tsc, {SourceFile} from "typescript"
 import * as path from "node:path"
 import * as fs from "node:fs"
@@ -14,7 +13,7 @@ import * as fs from "node:fs"
 /**
  * Convert a single JS/TS file to AST
  */
-function fileToJsAst(file: string): babelParser.ParseResult<babelTypes.File> {
+function fileToJsAst(file: string): babelParser.ParseResult {
     try {
         return babelParser.parse(fs.readFileSync(file, "utf-8"), Defaults.BABEL_PARSER_OPTIONS);
     } catch {
@@ -25,7 +24,7 @@ function fileToJsAst(file: string): babelParser.ParseResult<babelTypes.File> {
 /**
  * Convert a single JS/TS code snippet to AST
  */
-function codeToJsAst(code: string): babelParser.ParseResult<babelTypes.File> {
+function codeToJsAst(code: string): babelParser.ParseResult {
     try {
         return babelParser.parse(code, Defaults.BABEL_PARSER_OPTIONS);
     } catch {
@@ -36,7 +35,7 @@ function codeToJsAst(code: string): babelParser.ParseResult<babelTypes.File> {
 /**
  * Convert a single vue file to AST
  */
-function toVueAst(file: string): babelParser.ParseResult<babelTypes.File> {
+function toVueAst(file: string): babelParser.ParseResult {
     const code = fs.readFileSync(file, "utf-8");
     const cleanedCode = VueCodeCleaner.cleanVueCode(code)
     return codeToJsAst(cleanedCode);
@@ -113,7 +112,7 @@ async function createVueAst(options: Options) {
 /**
  * Write AST data to a json file
  */
-function writeAstFile(file: string, ast: babelParser.ParseResult<babelTypes.File>, options: Options) {
+function writeAstFile(file: string, ast: babelParser.ParseResult, options: Options) {
     const relativePath = path.relative(options.src, file)
     const outAstFile = path.join(options.output, relativePath + ".json");
     const data = {
