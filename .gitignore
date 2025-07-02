@@ -6,6 +6,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+sea-prep.blob
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
@@ -82,6 +83,7 @@ typings/
 # Nuxt.js build / generate output
 .nuxt
 dist
+bundle
 
 # Gatsby files
 .cache/
@@ -110,15 +112,6 @@ dist
 .tool-versions
 .idea/
 test/obj
-astgen-linux-x64
-astgen-linux-x64~
-astgen-macos-arm64
-astgen-macos-x64
-astgen-win-x64.exe
 astgen-linux
-astgen-linux~
-astgen-linux-arm64
-astgen-linux-arm64~
-astgen-macos-arm
 astgen-macos
 astgen-win.exe

@@ -8,8 +8,18 @@ on:
 concurrency: production
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  release:
+    name: Release for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: astgen-linux
+          - os: windows-latest
+            artifact_name: astgen-win.exe
+          - os: macos-latest
+            artifact_name: astgen-macos
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,12 +28,8 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '24'
           cache: 'yarn'
-      - name: Install ldid
-        uses: MOZGIII/install-ldid-action@v1
-        with:
-          tag: v2.1.5-procursus6
       - name: Get next release version (dry run)
         id: taggerDryRun
         uses: anothrNick/github-tag-action@1.61.0
@@ -41,40 +47,40 @@ jobs:
         run: |
           yarn install
           yarn build
-          yarn binary
+          yarn bundle
       - name: Test
         run: |
           yarn test
-      - name: Rename
+      - name: Create Windows binaries
+        if: matrix.os == 'windows-latest'
         run: |
-          mv astgen-linux-x64 astgen-linux
-          mv astgen-linux-arm64 astgen-linux-arm
-          mv astgen-macos-x64 astgen-macos
-          mv astgen-macos-arm64 astgen-macos-arm
-          mv astgen-win-x64.exe astgen-win.exe
-      - name: Run gzexe
+          node --experimental-sea-config sea-config.json
+          node -e "require('fs').copyFileSync(process.execPath, '${{ matrix.artifact_name }}')"
+          npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+      - name: Create Linux binaries
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          gzexe astgen-linux
-          gzexe astgen-linux-arm
-      - name: Make executable
+          node --experimental-sea-config sea-config.json
+          cp $(command -v node) ${{ matrix.artifact_name }}
+          npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+      - name: Create MacOS binaries
+        if: matrix.os == 'macos-latest'
         run: |
-          chmod +x astgen-macos
-          chmod +x astgen-macos-arm
-          chmod +x astgen-linux
-          chmod +x astgen-linux-arm
+          node --experimental-sea-config sea-config.json
+          cp $(command -v node) ${{ matrix.artifact_name }}
+          codesign --remove-signature ${{ matrix.artifact_name }}
+          npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 --macho-segment-name NODE_SEA
+          codesign --sign - ${{ matrix.artifact_name }}
       - name: Set next release version
         id: taggerFinal
         uses: anothrNick/github-tag-action@1.61.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WITH_V: true
-      - name: Release
-        uses: softprops/action-gh-release@v1
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
         with:
-          tag_name: ${{ steps.taggerDryRun.outputs.new_tag }}
-          files: |
-            astgen-win.exe
-            astgen-macos
-            astgen-macos-arm
-            astgen-linux
-            astgen-linux-arm
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.artifact_name }}
+          tag: ${{ steps.taggerDryRun.outputs.new_tag }}

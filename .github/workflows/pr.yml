@@ -5,8 +5,18 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
+    name: Test for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: astgen-linux
+          - os: windows-latest
+            artifact_name: astgen-win.exe
+          - os: macos-latest
+            artifact_name: astgen-macos
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -15,42 +25,48 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '24'
           cache: 'yarn'
-      - name: Install ldid
-        uses: MOZGIII/install-ldid-action@v1
-        with:
-          tag: v2.1.5-procursus6
       - name: Build
         run: |
           yarn install
           yarn build
+          yarn bundle
       - name: Test
         run: |
           yarn test
-      - name: Create Binaries
+      - name: Create Windows binaries
+        if: matrix.os == 'windows-latest'
         run: |
-          yarn binary
-      - name: Rename
+          node --experimental-sea-config sea-config.json
+          node -e "require('fs').copyFileSync(process.execPath, '${{ matrix.artifact_name }}')"
+          npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+      - name: Create Linux binaries
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          mv astgen-linux-x64 astgen-linux
-          mv astgen-linux-arm64 astgen-linux-arm
-          mv astgen-macos-x64 astgen-macos
-          mv astgen-macos-arm64 astgen-macos-arm
-          mv astgen-win-x64.exe astgen-win.exe
-      - name: Run gzexe
+          node --experimental-sea-config sea-config.json
+          cp $(command -v node) ${{ matrix.artifact_name }}
+          npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+      - name: Create MacOS binaries
+        if: matrix.os == 'macos-latest'
         run: |
-          gzexe astgen-linux
-          gzexe astgen-linux-arm
-      - name: Make executable
+          node --experimental-sea-config sea-config.json
+          cp $(command -v node) ${{ matrix.artifact_name }}
+          codesign --remove-signature ${{ matrix.artifact_name }}
+          npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 --macho-segment-name NODE_SEA
+          codesign --sign - ${{ matrix.artifact_name }}
+      - name: Print version and size (Windows)
+        if: matrix.os == 'windows-latest'
         run: |
-          chmod +x astgen-macos
-          chmod +x astgen-macos-arm
-          chmod +x astgen-linux
-          chmod +x astgen-linux-arm
-      - name: Print stats
+          Get-ChildItem -File | Select-Object Name,@{Name="Size(MB)";Expression={ "{0:N2}" -f ($_.Length/1MB) }} | Format-Table -AutoSize
+          echo "astgen version is:" $(.\${{ matrix.artifact_name }} --version)
+      - name: Print version and size (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           ls -lh
-      - name: Print version
+          echo "astgen version is:" $(./${{ matrix.artifact_name }} --version)
+      - name: Print version and size (MacOS)
+        if: matrix.os == 'macos-latest'
         run: |
-          ./astgen-linux --version
+          ls -lh
+          echo "astgen version is:" $(./${{ matrix.artifact_name }} --version)
