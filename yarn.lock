@@ -638,6 +638,11 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
+"@sapphire/result@^2.6.0":
+  version "2.7.2"
+  resolved "https://registry.yarnpkg.com/@sapphire/result/-/result-2.7.2.tgz#ce760d6d54039f6894267c453f4f4fa90f1ee4d2"
+  integrity sha512-DJbCGmvi8UZAu/hh85auQL8bODFlpcS3cWjRJZ5/cXTLekmGvs/CrRxrIzwbA6+poyYojo5rK4qu8trmjfneog==
+
 "@sinclair/typebox@^0.27.8":
   version "0.27.8"
   resolved "https://registry.npmjs.org/@sinclair/typebox/-/typebox-0.27.8.tgz"
@@ -1084,6 +1089,13 @@ error-ex@^1.3.1:
   integrity sha512-7dFHNmqeFSEt2ZBsCriorKnn3Z2pj+fd9kmI6QoWw4//DL+icEBfc0U7qJCisqrTsKTjw4fNFy2pW9OqStD84g==
   dependencies:
     is-arrayish "^0.2.1"
+
+esbuild-plugin-version-injector@1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/esbuild-plugin-version-injector/-/esbuild-plugin-version-injector-1.0.1.tgz#33aa92c31a3721f3d3d37b2e8450bc2e676b0c06"
+  integrity sha512-0L6eVDS+Yz+SpjdPvl+dFx9tc5B6JtZf6yY0V34pk5ViN5PogpeAxY4MCMtCNlz6bHp1mZHgToRO2HyImobWZQ==
+  dependencies:
+    "@sapphire/result" "^2.6.0"
 
 esbuild@0.25.5:
   version "0.25.5"
