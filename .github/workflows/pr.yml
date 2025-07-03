@@ -41,12 +41,14 @@ jobs:
           node --experimental-sea-config sea-config.json
           node -e "require('fs').copyFileSync(process.execPath, '${{ matrix.artifact_name }}')"
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+          cp .\bundle\astgen.js .
       - name: Create Linux binaries
         if: matrix.os == 'ubuntu-latest'
         run: |
           node --experimental-sea-config sea-config.json
           cp $(command -v node) ${{ matrix.artifact_name }}
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+          cp ./bundle/astgen.js .
       - name: Create MacOS binaries
         if: matrix.os == 'macos-latest'
         run: |
@@ -55,18 +57,19 @@ jobs:
           codesign --remove-signature ${{ matrix.artifact_name }}
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 --macho-segment-name NODE_SEA
           codesign --sign - ${{ matrix.artifact_name }}
+          cp ./bundle/astgen.js .
       - name: Print version and size (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          Get-ChildItem -File | Select-Object Name,@{Name="Size(MB)";Expression={ "{0:N2}" -f ($_.Length/1MB) }} | Format-Table -AutoSize
+          Get-ChildItem -Path . -Filter "astgen*" | Select-Object Name,@{Name="Size(MB)";Expression={"{0:N2}" -f ($_.Length/1MB)}}
           echo "astgen version is:" $(.\${{ matrix.artifact_name }} --version)
       - name: Print version and size (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          ls -lh
+          ls -lh ./astgen*
           echo "astgen version is:" $(./${{ matrix.artifact_name }} --version)
       - name: Print version and size (MacOS)
         if: matrix.os == 'macos-latest'
         run: |
-          ls -lh
+          ls -lh ./astgen*
           echo "astgen version is:" $(./${{ matrix.artifact_name }} --version)

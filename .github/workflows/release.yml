@@ -57,12 +57,14 @@ jobs:
           node --experimental-sea-config sea-config.json
           node -e "require('fs').copyFileSync(process.execPath, '${{ matrix.artifact_name }}')"
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+          cp .\bundle\astgen.js .
       - name: Create Linux binaries
         if: matrix.os == 'ubuntu-latest'
         run: |
           node --experimental-sea-config sea-config.json
           cp $(command -v node) ${{ matrix.artifact_name }}
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+          cp ./bundle/astgen.js .
       - name: Create MacOS binaries
         if: matrix.os == 'macos-latest'
         run: |
@@ -71,6 +73,7 @@ jobs:
           codesign --remove-signature ${{ matrix.artifact_name }}
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 --macho-segment-name NODE_SEA
           codesign --sign - ${{ matrix.artifact_name }}
+          cp ./bundle/astgen.js .
       - name: Set next release version
         id: taggerFinal
         uses: anothrNick/github-tag-action@1.61.0
@@ -80,7 +83,8 @@ jobs:
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
+          overwrite: true
+          file_glob: true
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ matrix.artifact_name }}
-          asset_name: ${{ matrix.artifact_name }}
+          file: astgen*
           tag: ${{ steps.taggerDryRun.outputs.new_tag }}
