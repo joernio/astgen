@@ -59,4 +59,4 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: astgen-*
           target_commit: ${{ github.head_ref || github.ref_name }}
-          tag: v${{ env.ASTGEN_VERSION }}
+          tag: v${{ env.ASTGEN_VERSION }}-prerelease
