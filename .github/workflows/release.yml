@@ -49,7 +49,7 @@ jobs:
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
           cp .\bundle\astgen.js .\${{ matrix.bundle_name }}
           echo "ASTGEN_VERSION=$(.\${{ matrix.artifact_name }} --version)" >> $env:GITHUB_ENV
-          echo "astgen version is: ${{ env.ASTGEN_VERSION }}"
+          echo "astgen version is: $ASTGEN_VERSION"
       - name: Create Linux binaries
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -58,7 +58,7 @@ jobs:
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
           cp ./bundle/astgen.js ./${{ matrix.bundle_name }}
           echo "ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
-          echo "astgen version is: ${{ env.ASTGEN_VERSION }}"
+          echo "astgen version is: $ASTGEN_VERSION"
       - name: Create MacOS binaries
         if: matrix.os == 'macos-latest'
         run: |
@@ -69,12 +69,7 @@ jobs:
           codesign --sign - ${{ matrix.artifact_name }}
           cp ./bundle/astgen.js ./${{ matrix.bundle_name }}
           echo "ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
-          echo "astgen version is: ${{ env.ASTGEN_VERSION }}"
-      - name: Set next release version
-        uses: laputansoft/github-tag-action@v4.6
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: v${{ env.ASTGEN_VERSION }}
+          echo "astgen version is: $ASTGEN_VERSION"
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:

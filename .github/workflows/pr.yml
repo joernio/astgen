@@ -66,19 +66,19 @@ jobs:
         run: |
           Get-ChildItem -Path . -Filter "astgen*" | Select-Object Name,@{Name="Size(MB)";Expression={"{0:N2}" -f ($_.Length/1MB)}}
           echo "ASTGEN_VERSION=$(.\${{ matrix.artifact_name }} --version)" >> $env:GITHUB_ENV
-          echo "astgen version is: ${{ env.ASTGEN_VERSION }}"
+          echo "astgen version is: $ASTGEN_VERSION"
       - name: Print version and size (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
           ls -lh ./astgen*
           echo "ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
-          echo "astgen version is: ${{ env.ASTGEN_VERSION }}"
+          echo "astgen version is: $ASTGEN_VERSION"
       - name: Print version and size (MacOS)
         if: matrix.os == 'macos-latest'
         run: |
           ls -lh ./astgen*
           echo "ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
-          echo "astgen version is: ${{ env.ASTGEN_VERSION }}"
+          echo "astgen version is: $ASTGEN_VERSION"
       - name: Upload binaries to pre-release
         uses: svenstaro/upload-release-action@v2
         with:
