@@ -33,7 +33,7 @@ jobs:
       - name: Create binaries
         run: |
           yarn binary
-       - name: Rename
+      - name: Rename
         run: |
           mv astgen-linux-x64 astgen-linux
           mv astgen-linux-arm64 astgen-linux-arm
