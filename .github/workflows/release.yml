@@ -30,19 +30,6 @@ jobs:
         with:
           node-version: '24'
           cache: 'yarn'
-      - name: Get next release version (dry run)
-        id: taggerDryRun
-        uses: anothrNick/github-tag-action@1.61.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: true
-          DRY_RUN: true
-      - name: echo new tag
-        run: |
-          echo "The next tag version will be: ${{ steps.taggerDryRun.outputs.new_tag }}"
-      - name: echo tag
-        run: |
-          echo "The current tag is: ${{ steps.taggerDryRun.outputs.tag }}"
       - name: Build
         run: |
           yarn install
@@ -58,6 +45,8 @@ jobs:
           node -e "require('fs').copyFileSync(process.execPath, '${{ matrix.artifact_name }}')"
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
           cp .\bundle\astgen.js .
+          echo "ASTGEN_VERSION=$(.\${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
+          echo "astgen version is: " ${{ env.ASTGEN_VERSION }}
       - name: Create Linux binaries
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -65,6 +54,8 @@ jobs:
           cp $(command -v node) ${{ matrix.artifact_name }}
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
           cp ./bundle/astgen.js .
+          echo "ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
+          echo "astgen version is: " ${{ env.ASTGEN_VERSION }}
       - name: Create MacOS binaries
         if: matrix.os == 'macos-latest'
         run: |
@@ -74,17 +65,19 @@ jobs:
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 --macho-segment-name NODE_SEA
           codesign --sign - ${{ matrix.artifact_name }}
           cp ./bundle/astgen.js .
+          echo "ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
+          echo "astgen version is: " ${{ env.ASTGEN_VERSION }}
       - name: Set next release version
-        id: taggerFinal
-        uses: anothrNick/github-tag-action@1.61.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: true
+        uses: laputansoft/github-tag-action@v4.6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ env.ASTGEN_VERSION }}
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
+          promote: true
           overwrite: true
           file_glob: true
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: astgen*
-          tag: ${{ steps.taggerDryRun.outputs.new_tag }}
+          tag: v${{ env.ASTGEN_VERSION }}

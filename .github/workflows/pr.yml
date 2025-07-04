@@ -27,13 +27,6 @@ jobs:
         with:
           node-version: '24'
           cache: 'yarn'
-      - name: Get next release version (dry run)
-        id: taggerDryRun
-        uses: anothrNick/github-tag-action@1.61.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: true
-          DRY_RUN: true
       - name: Build
         run: |
           yarn install
@@ -69,17 +62,20 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           Get-ChildItem -Path . -Filter "astgen*" | Select-Object Name,@{Name="Size(MB)";Expression={"{0:N2}" -f ($_.Length/1MB)}}
-          echo "astgen version is:" $(.\${{ matrix.artifact_name }} --version)
+          echo "ASTGEN_VERSION=$(.\${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
+          echo "astgen version is: " ${{ env.ASTGEN_VERSION }}
       - name: Print version and size (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
           ls -lh ./astgen*
-          echo "astgen version is:" $(./${{ matrix.artifact_name }} --version)
+          echo "ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
+          echo "astgen version is: " ${{ env.ASTGEN_VERSION }}
       - name: Print version and size (MacOS)
         if: matrix.os == 'macos-latest'
         run: |
           ls -lh ./astgen*
-          echo "astgen version is:" $(./${{ matrix.artifact_name }} --version)
+          echo "ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
+          echo "astgen version is: " ${{ env.ASTGEN_VERSION }}
       - name: Upload binaries to pre-release
         uses: svenstaro/upload-release-action@v2
         with:
@@ -88,4 +84,4 @@ jobs:
           file_glob: true
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: astgen*
-          tag: ${{ steps.taggerDryRun.outputs.new_tag }}-prerelease
+          tag: v${{ env.ASTGEN_VERSION }}
