@@ -16,10 +16,13 @@ jobs:
         include:
           - os: ubuntu-latest
             artifact_name: astgen-linux
+            bundle_name: astgen-linux.js
           - os: windows-latest
             artifact_name: astgen-win.exe
+            bundle_name: astgen-win.js
           - os: macos-latest
             artifact_name: astgen-macos
+            bundle_name: astgen-macos.js
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,18 +47,18 @@ jobs:
           node --experimental-sea-config sea-config.json
           node -e "require('fs').copyFileSync(process.execPath, '${{ matrix.artifact_name }}')"
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
-          cp .\bundle\astgen.js .
-          echo "ASTGEN_VERSION=$(.\${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
-          echo "astgen version is: " ${{ env.ASTGEN_VERSION }}
+          cp .\bundle\astgen.js .\${{ matrix.bundle_name }}
+          echo "ASTGEN_VERSION=$(.\${{ matrix.artifact_name }} --version)" >> $env:GITHUB_ENV
+          echo "astgen version is: ${{ env.ASTGEN_VERSION }}"
       - name: Create Linux binaries
         if: matrix.os == 'ubuntu-latest'
         run: |
           node --experimental-sea-config sea-config.json
           cp $(command -v node) ${{ matrix.artifact_name }}
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
-          cp ./bundle/astgen.js .
+          cp ./bundle/astgen.js ./${{ matrix.bundle_name }}
           echo "ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
-          echo "astgen version is: " ${{ env.ASTGEN_VERSION }}
+          echo "astgen version is: ${{ env.ASTGEN_VERSION }}"
       - name: Create MacOS binaries
         if: matrix.os == 'macos-latest'
         run: |
@@ -64,9 +67,9 @@ jobs:
           codesign --remove-signature ${{ matrix.artifact_name }}
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 --macho-segment-name NODE_SEA
           codesign --sign - ${{ matrix.artifact_name }}
-          cp ./bundle/astgen.js .
+          cp ./bundle/astgen.js ./${{ matrix.bundle_name }}
           echo "ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
-          echo "astgen version is: " ${{ env.ASTGEN_VERSION }}
+          echo "astgen version is: ${{ env.ASTGEN_VERSION }}"
       - name: Set next release version
         uses: laputansoft/github-tag-action@v4.6
         with:
