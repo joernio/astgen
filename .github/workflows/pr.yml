@@ -65,7 +65,7 @@ jobs:
         if: matrix.os == 'windows-latest'  
         run: |
           Get-ChildItem -Path . -Filter "astgen*" | Select-Object Name,@{Name="Size(MB)";Expression={"{0:N2}" -f ($_.Length/1MB)}}
-          ASTGEN_VERSION=$(.\${{ matrix.artifact_name }} --version)
+          $ASTGEN_VERSION = $(.\${{ matrix.artifact_name }} --version)
           echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $env:GITHUB_ENV
           echo "astgen version is: $ASTGEN_VERSION"
       - name: Print version and size (Linux)
@@ -90,4 +90,5 @@ jobs:
           file_glob: true
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: astgen*
+          body: "Pre-release for testing only"
           tag: v${{ env.ASTGEN_VERSION }}
