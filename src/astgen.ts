@@ -7,8 +7,6 @@ import * as path from "node:path"
 import yargs from "yargs"
 import {hideBin} from "yargs/helpers"
 
-export const version: string = '[VI]{{inject}}[/VI]';
-
 async function main(argv: string[]) {
     const args: Options = yargs(hideBin(argv))
         .option("src", {
@@ -56,7 +54,7 @@ async function main(argv: string[]) {
             },
             description: "Exclude files matching this regex (matches the absolute path)."
         })
-        .version(version)
+        .version()
         .help("h").parseSync();
 
     try {

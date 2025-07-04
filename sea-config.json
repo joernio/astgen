@@ -1,1 +1,0 @@
-{ "main": "./bundle/astgen.js", "output": "sea-prep.blob", "useCodeCache": true }

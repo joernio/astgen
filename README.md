@@ -21,37 +21,14 @@ Type maps are generated using the Typescript compiler / type checker API.
 ```bash
 yarn install
 yarn build
-yarn bundle
 ```
 
 This will generate the bundled and minified `astgen.js` in `bundle/`.
 
-Platform-specific binaries can now be build using [SEA](https://nodejs.org/api/single-executable-applications.html):
-
-### Binary on Windows
+Platform-specific binaries can now be build using [pkg](https://github.com/yao-pkg/pkg):
 
 ```bash
-node --experimental-sea-config sea-config.json
-node -e "require('fs').copyFileSync(process.execPath, 'astgen-win.exe')"
-npx postject astgen-win.exe NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
-```
-
-### Binary on Linux
-
-```bash
-node --experimental-sea-config sea-config.json
-cp $(command -v node) astgen-linux
-npx postject astgen-linux NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
-```
-
-### Binary on MacOS
-
-```bash
-node --experimental-sea-config sea-config.json
-cp $(command -v node) astgen-macos
-codesign --remove-signature astgen-macos
-npx postject astgen-macos NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 --macho-segment-name NODE_SEA
-codesign --sign - astgen-macos
+yarn binary
 ```
 
 ## Testing

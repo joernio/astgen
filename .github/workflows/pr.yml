@@ -6,20 +6,7 @@ on:
 
 jobs:
   test:
-    name: Test for ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            artifact_name: astgen-linux
-            bundle_name: astgen-linux.js
-          - os: windows-latest
-            artifact_name: astgen-win.exe
-            bundle_name: astgen-win.js
-          - os: macos-latest
-            artifact_name: astgen-macos
-            bundle_name: astgen-macos.js
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,58 +15,39 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '18'
           cache: 'yarn'
+      - name: Install ldid
+        uses: MOZGIII/install-ldid-action@v1
+        with:
+          tag: v2.1.5-procursus6
       - name: Build
         run: |
           yarn install
           yarn build
-          yarn bundle
       - name: Test
         run: |
           yarn test
-      - name: Create Windows binaries
-        if: matrix.os == 'windows-latest'
+      - name: Create binaries
         run: |
-          node --experimental-sea-config sea-config.json
-          node -e "require('fs').copyFileSync(process.execPath, '${{ matrix.artifact_name }}')"
-          npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
-          cp .\bundle\astgen.js .\${{ matrix.bundle_name }}
-      - name: Create Linux binaries
-        if: matrix.os == 'ubuntu-latest'
+          yarn binary
+      - name: Rename
         run: |
-          node --experimental-sea-config sea-config.json
-          cp $(command -v node) ${{ matrix.artifact_name }}
-          npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
-          cp ./bundle/astgen.js ./${{ matrix.bundle_name }}
-      - name: Create MacOS binaries
-        if: matrix.os == 'macos-latest'
+          mv astgen-linux-x64 astgen-linux
+          mv astgen-linux-arm64 astgen-linux-arm
+          mv astgen-macos-x64 astgen-macos
+          mv astgen-macos-arm64 astgen-macos-arm
+          mv astgen-win-x64.exe astgen-win.exe
+      - name: Run gzexe
         run: |
-          node --experimental-sea-config sea-config.json
-          cp $(command -v node) ${{ matrix.artifact_name }}
-          codesign --remove-signature ${{ matrix.artifact_name }}
-          npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 --macho-segment-name NODE_SEA
-          codesign --sign - ${{ matrix.artifact_name }}
-          cp ./bundle/astgen.js ./${{ matrix.bundle_name }}
-      - name: Print version and size (Windows)
-        if: matrix.os == 'windows-latest'  
-        run: |
-          Get-ChildItem -Path . -Filter "astgen*" | Select-Object Name,@{Name="Size(MB)";Expression={"{0:N2}" -f ($_.Length/1MB)}}
-          $ASTGEN_VERSION = $(.\${{ matrix.artifact_name }} --version)
-          echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $env:GITHUB_ENV
-          echo "astgen version is: $ASTGEN_VERSION"
-      - name: Print version and size (Linux)
-        if: matrix.os == 'ubuntu-latest'
+          gzexe astgen-linux
+          rm astgen-linux~
+          gzexe astgen-linux-arm
+          rm astgen-linux-arm~
+      - name: Print size and version
         run: |
           ls -lh ./astgen*
-          ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)
-          echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $GITHUB_ENV
-          echo "astgen version is: $ASTGEN_VERSION"
-      - name: Print version and size (MacOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          ls -lh ./astgen*
-          ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)
+          ASTGEN_VERSION=$(./astgen-linux --version)
           echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $GITHUB_ENV
           echo "astgen version is: $ASTGEN_VERSION"
       - name: Upload binaries to pre-release
@@ -89,7 +57,7 @@ jobs:
           overwrite: true
           file_glob: true
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: astgen*
+          file: astgen-*
           body: "Pre-release for testing only"
           target_commit: ${{ github.head_ref || github.ref_name }}
           tag: v${{ env.ASTGEN_VERSION }}
