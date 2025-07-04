@@ -50,13 +50,15 @@ jobs:
           ASTGEN_VERSION=$(./astgen-linux --version)
           echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $GITHUB_ENV
           echo "astgen version is: $ASTGEN_VERSION"
-      - name: Upload binaries to pre-release
-        uses: svenstaro/upload-release-action@v2
+      - name: Upload binaries to release
+        uses: softprops/action-gh-release@v1
         with:
           prerelease: true
-          overwrite: true
-          file_glob: true
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: astgen-*
-          target_commit: ${{ github.head_ref || github.ref_name }}
-          tag: v${{ env.ASTGEN_VERSION }}-prerelease
+          target_commitish: ${{ github.head_ref || github.ref_name }}
+          tag_name: v${{ env.ASTGEN_VERSION }}-prerelease
+          files: |
+            astgen-win.exe
+            astgen-macos
+            astgen-macos-arm
+            astgen-linux
+            astgen-linux-arm

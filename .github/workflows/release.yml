@@ -52,16 +52,13 @@ jobs:
           ASTGEN_VERSION=$(./astgen-linux --version)
           echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $GITHUB_ENV
           echo "astgen version is: $ASTGEN_VERSION"
-      - name: Set next release version
-        uses: anothrNick/github-tag-action@1.61.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CUSTOM_TAG: v${{ env.ASTGEN_VERSION }}
       - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
+        uses: softprops/action-gh-release@v1
         with:
-          overwrite: true
-          file_glob: true
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: astgen-*
-          tag: v${{ env.ASTGEN_VERSION }}
+          tag_name: v${{ env.ASTGEN_VERSION }}
+          files: |
+            astgen-win.exe
+            astgen-macos
+            astgen-macos-arm
+            astgen-linux
+            astgen-linux-arm
