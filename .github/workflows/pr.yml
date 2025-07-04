@@ -62,27 +62,24 @@ jobs:
           codesign --sign - ${{ matrix.artifact_name }}
           cp ./bundle/astgen.js ./${{ matrix.bundle_name }}
       - name: Print version and size (Windows)
-        if: matrix.os == 'windows-latest'
-        env:
-          ASTGEN_VERSION: $(.\${{ matrix.artifact_name }} --version)
+        if: matrix.os == 'windows-latest'  
         run: |
           Get-ChildItem -Path . -Filter "astgen*" | Select-Object Name,@{Name="Size(MB)";Expression={"{0:N2}" -f ($_.Length/1MB)}}
+          ASTGEN_VERSION=$(.\${{ matrix.artifact_name }} --version)
           echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $env:GITHUB_ENV
           echo "astgen version is: $ASTGEN_VERSION"
       - name: Print version and size (Linux)
         if: matrix.os == 'ubuntu-latest'
-        env:
-          ASTGEN_VERSION: $(./${{ matrix.artifact_name }} --version)
         run: |
           ls -lh ./astgen*
+          ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)
           echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $GITHUB_ENV
           echo "astgen version is: $ASTGEN_VERSION"
       - name: Print version and size (MacOS)
         if: matrix.os == 'macos-latest'
-        env:
-          ASTGEN_VERSION: $(./${{ matrix.artifact_name }} --version)
         run: |
           ls -lh ./astgen*
+          ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)
           echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $GITHUB_ENV
           echo "astgen version is: $ASTGEN_VERSION"
       - name: Upload binaries to pre-release
