@@ -60,4 +60,5 @@ jobs:
           file_glob: true
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: astgen-*
+          target_commit: ${{ github.ref }}
           tag: v${{ env.ASTGEN_VERSION }}
