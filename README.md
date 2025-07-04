@@ -21,15 +21,28 @@ Type maps are generated using the Typescript compiler / type checker API.
 ```bash
 yarn install
 yarn build
+```
+
+Platform-specific binaries can now be build using [pkg](https://github.com/yao-pkg/pkg):
+
+```bash
 yarn binary
 ```
 
-This will invoke `pgk` after `yarn install` and generates a native binary for Windows, MacOS, and Linux.
+## Testing
+
+```bash
+yarn install
+yarn build
+yarn test
+```
+
+This will use `jest` with `ts-jest` to run the tests in `test/`.
 
 ## Getting Help
 
 ```bash
-bin/astgen -h
+./astgen -h
 Options:
   -v, --version  Print version number                                  [boolean]
   -i, --src      Source directory                                 [default: "."]

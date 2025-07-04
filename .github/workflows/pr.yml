@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -15,7 +15,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '24'
           cache: 'yarn'
       - name: Install ldid
         uses: MOZGIII/install-ldid-action@v1
@@ -28,7 +28,7 @@ jobs:
       - name: Test
         run: |
           yarn test
-      - name: Create Binaries
+      - name: Create binaries
         run: |
           yarn binary
       - name: Rename
@@ -41,16 +41,23 @@ jobs:
       - name: Run gzexe
         run: |
           gzexe astgen-linux
+          rm astgen-linux~
           gzexe astgen-linux-arm
-      - name: Make executable
+          rm astgen-linux-arm~
+      - name: Print size and version
         run: |
-          chmod +x astgen-macos
-          chmod +x astgen-macos-arm
-          chmod +x astgen-linux
-          chmod +x astgen-linux-arm
-      - name: Print stats
-        run: |
-          ls -lh
-      - name: Print version
-        run: |
-          ./astgen-linux --version
+          ls -lh ./astgen*
+          ASTGEN_VERSION=$(./astgen-linux --version)
+          echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $GITHUB_ENV
+          echo "astgen version is: $ASTGEN_VERSION"
+      - name: Upload binaries to pre-release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          prerelease: true
+          overwrite: true
+          file_glob: true
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: astgen-*
+          body: "Pre-release for testing only"
+          target_commit: ${{ github.head_ref || github.ref_name }}
+          tag: v${{ env.ASTGEN_VERSION }}

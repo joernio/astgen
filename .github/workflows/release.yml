@@ -5,10 +5,9 @@ on:
     branches: [master, main]
     tags: ["*"]
 
-concurrency: production
-
 jobs:
-  build:
+  release:
+    concurrency: release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -18,33 +17,22 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '24'
           cache: 'yarn'
       - name: Install ldid
         uses: MOZGIII/install-ldid-action@v1
         with:
           tag: v2.1.5-procursus6
-      - name: Get next release version (dry run)
-        id: taggerDryRun
-        uses: anothrNick/github-tag-action@1.61.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: true
-          DRY_RUN: true
-      - name: echo new tag
-        run: |
-          echo "The next tag version will be: ${{ steps.taggerDryRun.outputs.new_tag }}"
-      - name: echo tag
-        run: |
-          echo "The current tag is: ${{ steps.taggerDryRun.outputs.tag }}"
       - name: Build
         run: |
           yarn install
           yarn build
-          yarn binary
       - name: Test
         run: |
           yarn test
+      - name: Create binaries
+        run: |
+          yarn binary
       - name: Rename
         run: |
           mv astgen-linux-x64 astgen-linux
@@ -55,26 +43,21 @@ jobs:
       - name: Run gzexe
         run: |
           gzexe astgen-linux
+          rm astgen-linux~
           gzexe astgen-linux-arm
-      - name: Make executable
+          rm astgen-linux-arm~
+      - name: Print size and version
         run: |
-          chmod +x astgen-macos
-          chmod +x astgen-macos-arm
-          chmod +x astgen-linux
-          chmod +x astgen-linux-arm
-      - name: Set next release version
-        id: taggerFinal
-        uses: anothrNick/github-tag-action@1.61.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: true
-      - name: Release
-        uses: softprops/action-gh-release@v1
+          ls -lh ./astgen*
+          ASTGEN_VERSION=$(./astgen-linux --version)
+          echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $GITHUB_ENV
+          echo "astgen version is: $ASTGEN_VERSION"
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
         with:
-          tag_name: ${{ steps.taggerDryRun.outputs.new_tag }}
-          files: |
-            astgen-win.exe
-            astgen-macos
-            astgen-macos-arm
-            astgen-linux
-            astgen-linux-arm
+          promote: true
+          overwrite: true
+          file_glob: true
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: astgen-*
+          tag: v${{ env.ASTGEN_VERSION }}
