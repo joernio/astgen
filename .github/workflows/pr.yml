@@ -91,4 +91,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: astgen*
           body: "Pre-release for testing only"
+          target_commit: ${{ github.head_ref || github.ref_name }}
           tag: v${{ env.ASTGEN_VERSION }}
