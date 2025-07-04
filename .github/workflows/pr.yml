@@ -73,3 +73,12 @@ jobs:
         run: |
           ls -lh ./astgen*
           echo "astgen version is:" $(./${{ matrix.artifact_name }} --version)
+      - name: Upload binaries to pre-release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          prerelease: true
+          overwrite: true
+          file_glob: true
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: astgen*
+          tag: ${{ github.ref }}
