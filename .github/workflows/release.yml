@@ -2,13 +2,12 @@ name: release
 
 on:
   push:
-    branches: [main]
+    branches: [master, main]
     tags: ["*"]
-
-concurrency: production
 
 jobs:
   release:
+    concurrency: production
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -18,7 +17,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '24'
           cache: 'yarn'
       - name: Install ldid
         uses: MOZGIII/install-ldid-action@v1
