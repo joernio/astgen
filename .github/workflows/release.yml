@@ -48,8 +48,6 @@ jobs:
           node -e "require('fs').copyFileSync(process.execPath, '${{ matrix.artifact_name }}')"
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
           cp .\bundle\astgen.js .\${{ matrix.bundle_name }}
-          echo "ASTGEN_VERSION=$(.\${{ matrix.artifact_name }} --version)" >> $env:GITHUB_ENV
-          echo "astgen version is: $ASTGEN_VERSION"
       - name: Create Linux binaries
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -57,8 +55,6 @@ jobs:
           cp $(command -v node) ${{ matrix.artifact_name }}
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
           cp ./bundle/astgen.js ./${{ matrix.bundle_name }}
-          echo "ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
-          echo "astgen version is: $ASTGEN_VERSION"
       - name: Create MacOS binaries
         if: matrix.os == 'macos-latest'
         run: |
@@ -68,7 +64,29 @@ jobs:
           npx postject ${{ matrix.artifact_name }} NODE_SEA_BLOB sea-prep.blob --overwrite --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 --macho-segment-name NODE_SEA
           codesign --sign - ${{ matrix.artifact_name }}
           cp ./bundle/astgen.js ./${{ matrix.bundle_name }}
-          echo "ASTGEN_VERSION=$(./${{ matrix.artifact_name }} --version)" >> $GITHUB_ENV
+      - name: Print version and size (Windows)
+        if: matrix.os == 'windows-latest'
+        env:
+          ASTGEN_VERSION: $(.\${{ matrix.artifact_name }} --version)
+        run: |
+          Get-ChildItem -Path . -Filter "astgen*" | Select-Object Name,@{Name="Size(MB)";Expression={"{0:N2}" -f ($_.Length/1MB)}}
+          echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $env:GITHUB_ENV
+          echo "astgen version is: $ASTGEN_VERSION"
+      - name: Print version and size (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          ASTGEN_VERSION: $(./${{ matrix.artifact_name }} --version)
+        run: |
+          ls -lh ./astgen*
+          echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $GITHUB_ENV
+          echo "astgen version is: $ASTGEN_VERSION"
+      - name: Print version and size (MacOS)
+        if: matrix.os == 'macos-latest'
+        env:
+          ASTGEN_VERSION: $(./${{ matrix.artifact_name }} --version)
+        run: |
+          ls -lh ./astgen*
+          echo "ASTGEN_VERSION=$ASTGEN_VERSION" >> $GITHUB_ENV
           echo "astgen version is: $ASTGEN_VERSION"
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
