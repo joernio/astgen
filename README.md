@@ -23,8 +23,6 @@ yarn install
 yarn build
 ```
 
-This will generate the bundled and minified `astgen.js` in `bundle/`.
-
 Platform-specific binaries can now be build using [pkg](https://github.com/yao-pkg/pkg):
 
 ```bash
