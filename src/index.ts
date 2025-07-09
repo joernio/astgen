@@ -41,9 +41,9 @@ function toVueAst(file: string): babelParser.ParseResult {
     return codeToJsAst(cleanedCode);
 }
 
-function createTsc(srcFiles: string[]): TscUtils.TscResult | undefined {
+function createTsc(file: string): TscUtils.TscResult | undefined {
     try {
-        return TscUtils.tscForFiles(srcFiles)
+        return TscUtils.tscForFile(file)
     } catch (err) {
         if (err instanceof Error) {
             console.warn("Retrieving types", err.message);
@@ -58,25 +58,21 @@ function createTsc(srcFiles: string[]): TscUtils.TscResult | undefined {
 async function createJSAst(options: Options) {
     try {
         const srcFiles: string[] = await FileUtils.filesWithExtensions(options, Defaults.JS_EXTENSIONS);
-        let ts: TscUtils.TscResult | undefined;
-        if (options.tsTypes) {
-            ts = createTsc(srcFiles);
-        }
-
         for (const file of srcFiles) {
             try {
                 const ast = fileToJsAst(file);
                 writeAstFile(file, ast, options);
-                if (ts) {
-                    try {
+                try {
+                    let ts = options.tsTypes ? createTsc(file) : undefined;
+                    if (ts) {
                         const tsAst: SourceFile = ts.program.getSourceFile(file)!;
                         tsc.forEachChild(tsAst, ts.addType);
                         writeTypesFile(file, ts.seenTypes, options);
                         ts.seenTypes.clear();
-                    } catch (err) {
-                        if (err instanceof Error) {
-                            console.warn("Retrieving types", file, ":", err.message);
-                        }
+                    }
+                } catch (err) {
+                    if (err instanceof Error) {
+                        console.warn("Retrieving types", file, ":", err.message);
                     }
                 }
             } catch (err) {

@@ -9,8 +9,8 @@ export interface TscResult {
     seenTypes: Map<number, string>
 }
 
-export function tscForFiles(srcFiles: string[]): TscResult {
-    const program = tsc.createProgram(srcFiles, Defaults.DEFAULT_TSC_OPTIONS);
+export function tscForFile(file: string): TscResult {
+    const program = tsc.createProgram([file], Defaults.DEFAULT_TSC_OPTIONS);
     const typeChecker = program.getTypeChecker();
     const seenTypes = new Map<number, string>();
 
