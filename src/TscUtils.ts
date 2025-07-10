@@ -1,5 +1,4 @@
 import * as Defaults from "./Defaults";
-import {DEFAULT_IGNORED_TYPES} from "./Defaults";
 
 import tsc from "typescript";
 
@@ -17,9 +16,10 @@ function forEachNode(ast: tsc.Node, callback: (node: tsc.Node) => void): void {
 function safeTypeToString(node: tsc.Type, typeChecker: tsc.TypeChecker): string {
     try {
         const tpe: string = typeChecker.typeToString(node, undefined, Defaults.DEFAULT_TSC_TYPE_OPTIONS);
-        if (/^["'`].*["'`]$/.test(tpe)) {
-            return "string";
-        }
+        if (tpe.length === 0) return Defaults.ANY
+        if (tpe == Defaults.UNKNOWN) return Defaults.ANY
+        if (Defaults.STRING_REGEX.test(tpe)) return "string";
+        if (Defaults.ARRAY_REGEX.test(tpe)) return "__ecma.Array";
         return tpe;
     } catch (err) {
         return Defaults.ANY;
@@ -51,7 +51,7 @@ export function typeMapForFile(file: string): TypeMap {
         } else {
             typeStr = safeTypeToString(typeChecker.getTypeAtLocation(node), typeChecker);
         }
-        if (!DEFAULT_IGNORED_TYPES.includes(typeStr)) {
+        if (typeStr !== Defaults.ANY) {
             const pos = `${node.getStart()}:${node.getEnd()}`;
             seenTypes.set(pos, typeStr);
         }
