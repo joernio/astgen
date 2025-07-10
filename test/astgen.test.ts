@@ -1,165 +1,158 @@
-import * as path from "node:path"
-import * as os from "node:os"
-import * as fs from "node:fs"
-import start from "../src/index"
+import * as path from "node:path";
+import * as os from "node:os";
+import * as fs from "node:fs";
+import start from "../src/index";
+import Options from "../src/Options";
+
+async function setupTestFixture(code: string,
+                                filename: string,
+                                options: Object,
+                                testFunc: (dir: string, testFile: string) => void,
+                                excludeFiles: (dir: string, testFile: string) => string[] = (): string[] => {
+                                    return []
+                                }) {
+    const tmpDir: string = fs.mkdtempSync(path.join(os.tmpdir(), "astgen-tests"));
+    const testFile: string = path.join(tmpDir, filename);
+    if (!fs.existsSync((path.dirname(testFile)))) {
+        fs.mkdirSync(path.dirname(testFile), {recursive: true});
+    }
+    fs.writeFileSync(testFile, code);
+
+    const defaultOptions: Options = {
+        src: tmpDir,
+        type: "js",
+        output: path.join(tmpDir, "ast_out"),
+        recurse: true,
+        tsTypes: true,
+        "exclude-file": excludeFiles(tmpDir, testFile),
+    };
+    await start({...defaultOptions, ...options});
+    testFunc(tmpDir, testFile);
+    fs.rmSync(tmpDir, {recursive: true});
+}
+
 
 describe('astgen basic functionality', () => {
     it('should parse another js file correctly', async () => {
-        const tmpDir: string = fs.mkdtempSync(path.join(os.tmpdir(), "astgen-tests"));
-        const testFile = path.join(tmpDir, "main.js");
-        fs.writeFileSync(testFile,
-         `const somedata = require('../../package.json');
+        const code = `const somedata = require('../../package.json');
           const foo = "Something";
           const bar = {
             foo
           };
           exports.foo = bar.foo;
-          module.exports = bar;`
-         );
+          module.exports = bar;`;
 
-        await start({
-            src: tmpDir,
-            type: "js",
-            output: path.join(tmpDir, "ast_out"),
-            recurse: true,
-            tsTypes: true,
-            "exclude-file": []
+        await setupTestFixture(code, "main.js", {}, (tmpDir: string, testFile: string) => {
+            const resultAst = fs.readFileSync(path.join(tmpDir, "ast_out", "main.js.json")).toString();
+            expect(resultAst).toContain("\"fullName\":\"" + testFile.replaceAll("\\", "\\\\") + "\"");
+            expect(resultAst).toContain("\"relativeName\":\"main.js\"");
+            const resultTypes = fs.readFileSync(path.join(tmpDir, "ast_out", "main.js.typemap")).toString();
+            expect(resultTypes).toEqual("{" +
+                "\"17:24\":\"Require\"," +
+                "\"25:45\":\"string\"," +
+                "\"64:67\":\"string\"," +
+                "\"70:81\":\"string\"," +
+                "\"64:81\":\"string\"," +
+                "\"99:102\":\"{ foo: string; }\"," +
+                "\"119:122\":\"string\"," +
+                "\"105:134\":\"{ foo: string; }\"," +
+                "\"99:134\":\"{ foo: string; }\"," +
+                "\"146:153\":\"{ foo: any; }\"," +
+                "\"160:163\":\"{ foo: string; }\"," +
+                "\"164:167\":\"string\"," +
+                "\"160:167\":\"string\"," +
+                "\"146:167\":\"string\"," +
+                "\"179:185\":\"{ exports: { foo: any; }; }\"," +
+                "\"186:193\":\"{ foo: any; }\"," +
+                "\"179:193\":\"{ foo: any; }\"," +
+                "\"196:199\":\"{ foo: string; }\"," +
+                "\"179:199\":\"{ foo: any; }\"" +
+                "}");
         });
-        const resultAst = fs.readFileSync(path.join(tmpDir, "ast_out", "main.js.json")).toString();
-        expect(resultAst).toContain("\"fullName\":\"" + testFile.replaceAll("\\", "\\\\") + "\"");
-        expect(resultAst).toContain("\"relativeName\":\"main.js\"");
-        const resultTypes = fs.readFileSync(path.join(tmpDir, "ast_out", "main.js.typemap")).toString();
-        expect(resultTypes).toEqual("{\"17\":\"Require\",\"25\":\"\\\"../../package.json\\\"\",\"64\":\"\\\"Something\\\"\",\"70\":\"\\\"Something\\\"\",\"99\":\"{ foo: string; }\",\"105\":\"{ foo: string; }\",\"119\":\"string\",\"146\":\"{ foo: any; }\",\"160\":\"{ foo: string; }\",\"164\":\"string\",\"179\":\"{ exports: { foo: any; }; }\",\"186\":\"{ foo: any; }\",\"196\":\"{ foo: string; }\"}");
-
-        fs.rmSync(tmpDir, {recursive: true});
     });
 
     it('should parse a simple js file correctly', async () => {
-        const tmpDir: string = fs.mkdtempSync(path.join(os.tmpdir(), "astgen-tests"));
-        const testFile = path.join(tmpDir, "main.js");
-        fs.writeFileSync(testFile, "console.log(\"Hello, world!\");");
+        const code = "console.log(\"Hello, world!\");";
 
-        await start({
-            src: tmpDir,
-            type: "js",
-            output: path.join(tmpDir, "ast_out"),
-            recurse: true,
-            tsTypes: true,
-            "exclude-file": []
+        await setupTestFixture(code, "main.js", {}, (tmpDir: string, testFile: string) => {
+            const resultAst = fs.readFileSync(path.join(tmpDir, "ast_out", "main.js.json")).toString();
+            expect(resultAst).toContain("\"fullName\":\"" + testFile.replaceAll("\\", "\\\\") + "\"");
+            expect(resultAst).toContain("\"relativeName\":\"main.js\"");
+            const resultTypes = fs.readFileSync(path.join(tmpDir, "ast_out", "main.js.typemap")).toString();
+            expect(resultTypes).toEqual("{" +
+                "\"0:7\":\"Console\"," +
+                "\"8:11\":\"{ (...data: any[]): void; (message?: any, ...optionalParams: any[]): void; }\"," +
+                "\"0:11\":\"{ (...data: any[]): void; (message?: any, ...optionalParams: any[]): void; }\"," +
+                "\"12:27\":\"string\",\"0:28\":\"void\"" +
+                "}");
         });
-        const resultAst = fs.readFileSync(path.join(tmpDir, "ast_out", "main.js.json")).toString();
-        expect(resultAst).toContain("\"fullName\":\"" + testFile.replaceAll("\\", "\\\\") + "\"");
-        expect(resultAst).toContain("\"relativeName\":\"main.js\"");
-        const resultTypes = fs.readFileSync(path.join(tmpDir, "ast_out", "main.js.typemap")).toString();
-        expect(resultTypes).toEqual("{\"0\":\"Console\",\"8\":\"{ (...data: any[]): void; (message?: any, ...optionalParams: any[]): void; }\",\"12\":\"\\\"Hello, world!\\\"\"}");
-
-        fs.rmSync(tmpDir, {recursive: true});
     });
 
     it('should exclude files by relative file path correctly', async () => {
-        const tmpDir: string = fs.mkdtempSync(path.join(os.tmpdir(), "astgen-tests"));
-        const testFile = path.join(tmpDir, "main.js");
-        fs.writeFileSync(testFile, "console.log(\"Hello, world!\");");
-        await start({
-            src: tmpDir,
-            type: "js",
-            output: path.join(tmpDir, "ast_out"),
-            recurse: true,
+        const code = "console.log(\"Hello, world!\");";
+        const config = {
             tsTypes: false,
             "exclude-file": ["main.js"]
+        };
+        await setupTestFixture(code, "main.js", config, (tmpDir: string, _: string) => {
+            expect(fs.existsSync(path.join(tmpDir, "ast_out", "main.js.json"))).toBeFalsy()
         });
-        expect(fs.existsSync(path.join(tmpDir, "ast_out", "main.js.json"))).toBeFalsy()
-
-        fs.rmSync(tmpDir, {recursive: true});
     });
 
     it('should exclude files by absolute file path correctly', async () => {
-        const tmpDir: string = fs.mkdtempSync(path.join(os.tmpdir(), "astgen-tests"));
-        const testFile = path.join(tmpDir, "main.js");
-        fs.writeFileSync(testFile, "console.log(\"Hello, world!\");");
-        await start({
-            src: tmpDir,
-            type: "js",
-            output: path.join(tmpDir, "ast_out"),
-            recurse: true,
-            tsTypes: false,
-            "exclude-file": [testFile]
-        });
-        expect(fs.existsSync(path.join(tmpDir, "ast_out", "main.js.json"))).toBeFalsy()
+        const code = "console.log(\"Hello, world!\");"
+        const config = {tsTypes: false};
 
-        fs.rmSync(tmpDir, {recursive: true});
+        await setupTestFixture(code, "main.js", config, (tmpDir: string, _: string) => {
+            expect(fs.existsSync(path.join(tmpDir, "ast_out", "main.js.json"))).toBeFalsy()
+        }, (_, testFile): string[] => {
+            return [testFile]
+        });
     });
 
     it('should exclude files by relative file path with dir correctly', async () => {
-        const tmpDir: string = fs.mkdtempSync(path.join(os.tmpdir(), "astgen-tests"));
-        const testFile = path.join(tmpDir, "src", "main.js");
-        fs.mkdirSync(path.join(tmpDir, "src"))
-        fs.writeFileSync(testFile, "console.log(\"Hello, world!\");");
-        await start({
-            src: tmpDir,
-            type: "js",
-            output: path.join(tmpDir, "ast_out"),
-            recurse: true,
+        const code = "console.log(\"Hello, world!\");";
+        const config = {
             tsTypes: false,
             "exclude-file": [path.join("src", "main.js")]
+        };
+        await setupTestFixture(code, "src/main.js", config, (tmpDir: string, _: string) => {
+            expect(fs.existsSync(path.join(tmpDir, "ast_out", "src", "main.js.json"))).toBeFalsy()
         });
-        expect(fs.existsSync(path.join(tmpDir, "ast_out", "src", "main.js.json"))).toBeFalsy()
-
-        fs.rmSync(tmpDir, {recursive: true});
     });
 
     it('should exclude files by relative dir path correctly', async () => {
-        const tmpDir: string = fs.mkdtempSync(path.join(os.tmpdir(), "astgen-tests"));
-        const testFile = path.join(tmpDir, "src", "main.js");
-        fs.mkdirSync(path.join(tmpDir, "src"))
-        fs.writeFileSync(testFile, "console.log(\"Hello, world!\");");
-        await start({
-            src: tmpDir,
-            type: "js",
-            output: path.join(tmpDir, "ast_out"),
-            recurse: true,
+        const code = "console.log(\"Hello, world!\");";
+        const config = {
             tsTypes: false,
             "exclude-file": ["src"]
+        };
+        await setupTestFixture(code, "src/main.js", config, (tmpDir: string, _: string) => {
+            expect(fs.existsSync(path.join(tmpDir, "ast_out", "src", "main.js.json"))).toBeFalsy()
         });
-        expect(fs.existsSync(path.join(tmpDir, "ast_out", "src", "main.js.json"))).toBeFalsy()
-
-        fs.rmSync(tmpDir, {recursive: true});
     });
 
     it('should exclude files by absolute dir path correctly', async () => {
-        const tmpDir: string = fs.mkdtempSync(path.join(os.tmpdir(), "astgen-tests"));
-        const testFile = path.join(tmpDir, "src", "main.js");
-        fs.mkdirSync(path.join(tmpDir, "src"))
-        fs.writeFileSync(testFile, "console.log(\"Hello, world!\");");
-        await start({
-            src: tmpDir,
-            type: "js",
-            output: path.join(tmpDir, "ast_out"),
-            recurse: true,
-            tsTypes: false,
-            "exclude-file": [path.join(tmpDir, "src")]
-        });
-        expect(fs.existsSync(path.join(tmpDir, "ast_out", "main.js.json"))).toBeFalsy()
+        const code = "console.log(\"Hello, world!\");"
+        const config = {tsTypes: false};
 
-        fs.rmSync(tmpDir, {recursive: true});
+        await setupTestFixture(code, "src/main.js", config, (tmpDir: string, _: string) => {
+            expect(fs.existsSync(path.join(tmpDir, "ast_out", "src", "main.js.json"))).toBeFalsy()
+        }, (tmpDir, _): string[] => {
+            return [path.join(tmpDir, "src")]
+        });
     });
 
     it('should exclude files by regex correctly', async () => {
-        const tmpDir: string = fs.mkdtempSync(path.join(os.tmpdir(), "astgen-tests"));
-        const testFile = path.join(tmpDir, "main.js");
-        fs.writeFileSync(testFile, "console.log(\"Hello, world!\");");
-        await start({
-            src: tmpDir,
-            type: "js",
-            output: path.join(tmpDir, "ast_out"),
-            recurse: true,
+        const code = "console.log(\"Hello, world!\");";
+        const config = {
             tsTypes: false,
             "exclude-file": [],
             "exclude-regex": new RegExp(".*main.*", "i")
+        };
+        await setupTestFixture(code, "main.js", config, (tmpDir: string, _: string) => {
+            expect(fs.existsSync(path.join(tmpDir, "ast_out", "main.js.json"))).toBeFalsy()
         });
-        expect(fs.existsSync(path.join(tmpDir, "ast_out", "main.js.json"))).toBeFalsy()
-
-        fs.rmSync(tmpDir, {recursive: true});
     });
 
 });

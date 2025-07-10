@@ -1,57 +1,67 @@
 import * as Defaults from "./Defaults";
+import {DEFAULT_IGNORED_TYPES} from "./Defaults";
 
 import tsc from "typescript";
 
-export interface TscResult {
-    program: tsc.Program,
-    typeChecker: tsc.TypeChecker,
-    addType: (node: tsc.Node) => (void),
-    seenTypes: Map<number, string>
-}
+export type TypeMap = Map<string, string>;
 
-export function tscForFile(file: string): TscResult {
-    const program = tsc.createProgram([file], Defaults.DEFAULT_TSC_OPTIONS);
-    const typeChecker = program.getTypeChecker();
-    const seenTypes = new Map<number, string>();
-
-    function safeTypeToString(node: tsc.Type): string {
-        try {
-            return typeChecker.typeToString(node, undefined, tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias);
-        } catch (err) {
-            return "any";
-        }
+function forEachNode(ast: tsc.Node, callback: (node: tsc.Node) => void): void {
+    function visit(node: tsc.Node) {
+        tsc.forEachChild(node, visit);
+        callback(node);
     }
 
-    function addType(node: tsc.Node) {
+    visit(ast);
+}
+
+function safeTypeToString(node: tsc.Type, typeChecker: tsc.TypeChecker): string {
+    try {
+        const tpe: string = typeChecker.typeToString(node, undefined, Defaults.DEFAULT_TSC_TYPE_OPTIONS);
+        if (/^["'`].*["'`]$/.test(tpe)) {
+            return "string";
+        }
+        return tpe;
+    } catch (err) {
+        return Defaults.ANY;
+    }
+}
+
+function isSignatureDeclaration(node: tsc.Node): node is tsc.SignatureDeclaration {
+    return tsc.isSetAccessor(node) || tsc.isGetAccessor(node) ||
+        tsc.isConstructSignatureDeclaration(node) || tsc.isMethodDeclaration(node) ||
+        tsc.isFunctionDeclaration(node) || tsc.isConstructorDeclaration(node)
+}
+
+export function typeMapForFile(file: string): TypeMap {
+    function addType(node: tsc.Node): void {
+        if (tsc.isSourceFile(node)) return;
         let typeStr;
-        if (tsc.isSetAccessor(node) ||
-            tsc.isGetAccessor(node) ||
-            tsc.isConstructSignatureDeclaration(node) ||
-            tsc.isMethodDeclaration(node) ||
-            tsc.isFunctionDeclaration(node) ||
-            tsc.isConstructorDeclaration(node)) {
+        if (isSignatureDeclaration(node)) {
             const signature: tsc.Signature = typeChecker.getSignatureFromDeclaration(node)!;
-            const returnType = typeChecker.getReturnTypeOfSignature(signature);
-            typeStr = safeTypeToString(returnType);
+            const returnType: tsc.Type = typeChecker.getReturnTypeOfSignature(signature);
+            typeStr = safeTypeToString(returnType, typeChecker);
         } else if (tsc.isFunctionLike(node)) {
-            const funcType = typeChecker.getTypeAtLocation(node);
-            const funcSignature = typeChecker.getSignaturesOfType(funcType, tsc.SignatureKind.Call)[0];
+            const funcType: tsc.Type = typeChecker.getTypeAtLocation(node);
+            const funcSignature: tsc.Signature = typeChecker.getSignaturesOfType(funcType, tsc.SignatureKind.Call)[0];
             if (funcSignature) {
-                typeStr = safeTypeToString(funcSignature.getReturnType());
+                typeStr = safeTypeToString(funcSignature.getReturnType(), typeChecker);
             } else {
-                typeStr = safeTypeToString(typeChecker.getTypeAtLocation(node));
+                typeStr = safeTypeToString(typeChecker.getTypeAtLocation(node), typeChecker);
             }
         } else {
-            typeStr = safeTypeToString(typeChecker.getTypeAtLocation(node));
+            typeStr = safeTypeToString(typeChecker.getTypeAtLocation(node), typeChecker);
         }
-        if (!["any", "unknown", "any[]", "unknown[]"].includes(typeStr)) seenTypes.set(node.getStart(), typeStr);
-        tsc.forEachChild(node, addType);
+        if (!DEFAULT_IGNORED_TYPES.includes(typeStr)) {
+            const pos = `${node.getStart()}:${node.getEnd()}`;
+            seenTypes.set(pos, typeStr);
+        }
     }
 
-    return {
-        program: program,
-        typeChecker: typeChecker,
-        addType: addType,
-        seenTypes: seenTypes
-    };
+    const program: tsc.Program = tsc.createProgram([file], Defaults.DEFAULT_TSC_OPTIONS);
+    const typeChecker: tsc.TypeChecker = program.getTypeChecker();
+    const seenTypes = new Map<string, string>();
+
+    forEachNode(program.getSourceFile(file)!, addType)
+    return seenTypes
 }
+

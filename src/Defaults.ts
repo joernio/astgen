@@ -91,3 +91,9 @@ export const DEFAULT_TSC_OPTIONS: tsc.CompilerOptions = {
     noPropertyAccessFromIndexSignature: false,
     removeComments: true
 }
+
+export const DEFAULT_TSC_TYPE_OPTIONS: number = tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
+
+export const ANY: string = "any"
+
+export const DEFAULT_IGNORED_TYPES: string[] = ["any", "unknown", "any[]", "unknown[]"]
