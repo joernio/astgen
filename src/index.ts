@@ -4,9 +4,9 @@ import * as FileUtils from "./FileUtils"
 import * as JsonUtils from "./JsonUtils"
 import * as VueCodeCleaner from "./VueCodeCleaner"
 import * as TscUtils from "./TscUtils"
+import {TypeMap} from "./TscUtils"
 
 import * as babelParser from "@babel/parser"
-import tsc, {SourceFile} from "typescript"
 import * as path from "node:path"
 import * as fs from "node:fs"
 
@@ -41,12 +41,12 @@ function toVueAst(file: string): babelParser.ParseResult {
     return codeToJsAst(cleanedCode);
 }
 
-function createTsc(file: string): TscUtils.TscResult | undefined {
+function typeMapForFile(file: string): TypeMap | undefined {
     try {
-        return TscUtils.tscForFile(file)
+        return TscUtils.typeMapForFile(file)
     } catch (err) {
         if (err instanceof Error) {
-            console.warn("Retrieving types", err.message);
+            console.warn("Retrieving types", file, ":", err.message);
         }
         return undefined;
     }
@@ -60,15 +60,12 @@ async function createJSAst(options: Options) {
         const srcFiles: string[] = await FileUtils.filesWithExtensions(options, Defaults.JS_EXTENSIONS);
         for (const file of srcFiles) {
             try {
-                const ast = fileToJsAst(file);
+                const ast: babelParser.ParseResult = fileToJsAst(file);
                 writeAstFile(file, ast, options);
                 try {
-                    let ts = options.tsTypes ? createTsc(file) : undefined;
-                    if (ts) {
-                        const tsAst: SourceFile = ts.program.getSourceFile(file)!;
-                        tsc.forEachChild(tsAst, ts.addType);
-                        writeTypesFile(file, ts.seenTypes, options);
-                        ts.seenTypes.clear();
+                    let ts: TypeMap | undefined = options.tsTypes ? typeMapForFile(file) : undefined;
+                    if (ts && ts.size !== 0) {
+                        writeTypesFile(file, ts, options);
                     }
                 } catch (err) {
                     if (err instanceof Error) {
@@ -93,7 +90,7 @@ async function createVueAst(options: Options) {
     const srcFiles: string[] = await FileUtils.filesWithExtensions(options, [".vue"]);
     for (const file of srcFiles) {
         try {
-            const ast = toVueAst(file);
+            const ast: babelParser.ParseResult = toVueAst(file);
             if (ast) {
                 writeAstFile(file, ast, options);
             }
@@ -109,8 +106,8 @@ async function createVueAst(options: Options) {
  * Write AST data to a json file
  */
 function writeAstFile(file: string, ast: babelParser.ParseResult, options: Options) {
-    const relativePath = path.relative(options.src, file)
-    const outAstFile = path.join(options.output, relativePath + ".json");
+    const relativePath: string = path.relative(options.src, file)
+    const outAstFile: string = path.join(options.output, relativePath + ".json");
     const data = {
         fullName: file,
         relativeName: relativePath,
@@ -124,16 +121,16 @@ function writeAstFile(file: string, ast: babelParser.ParseResult, options: Optio
 /**
  * Write tsc type data to a json file
  */
-function writeTypesFile(file: string, seenTypes: Map<number, string>, options: Options) {
-    const relativePath = path.relative(options.src, file)
-    const outTypeFile = path.join(options.output, relativePath + ".typemap");
+function writeTypesFile(file: string, seenTypes: TypeMap, options: Options) {
+    const relativePath: string = path.relative(options.src, file)
+    const outTypeFile: string = path.join(options.output, relativePath + ".typemap");
     fs.mkdirSync(path.dirname(outTypeFile), {recursive: true});
     fs.writeFileSync(outTypeFile, JsonUtils.stringify(Object.fromEntries(seenTypes)));
     console.log("Converted types for", relativePath, "to", outTypeFile);
 }
 
 async function createXAst(options: Options) {
-    const srcDir = options.src;
+    const srcDir: string = options.src;
     try {
         fs.accessSync(srcDir, fs.constants.R_OK);
     } catch (err) {
