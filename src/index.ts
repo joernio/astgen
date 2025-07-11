@@ -3,8 +3,7 @@ import * as Defaults from "./Defaults"
 import * as FileUtils from "./FileUtils"
 import * as JsonUtils from "./JsonUtils"
 import * as VueCodeCleaner from "./VueCodeCleaner"
-import * as TscUtils from "./TscUtils"
-import {TypeMap} from "./TscUtils"
+import TscUtils, {TypeMap} from "./TscUtils"
 
 import * as babelParser from "@babel/parser"
 import * as path from "node:path"
@@ -41,12 +40,12 @@ function toVueAst(file: string): babelParser.ParseResult {
     return codeToJsAst(cleanedCode);
 }
 
-function typeMapForFile(file: string): TypeMap | undefined {
+function buildTscUtils(files: string[]): TscUtils | undefined {
     try {
-        return TscUtils.typeMapForFile(file)
+        return new TscUtils(files)
     } catch (err) {
         if (err instanceof Error) {
-            console.warn("Retrieving types", file, ":", err.message);
+            console.warn("Retrieving types:", err.message);
         }
         return undefined;
     }
@@ -58,14 +57,15 @@ function typeMapForFile(file: string): TypeMap | undefined {
 async function createJSAst(options: Options) {
     try {
         const srcFiles: string[] = await FileUtils.filesWithExtensions(options, Defaults.JS_EXTENSIONS);
+        const tscUtils: TscUtils | undefined = (options.tsTypes && srcFiles.length > 0) ? buildTscUtils(srcFiles) : undefined;
         for (const file of srcFiles) {
             try {
                 const ast: babelParser.ParseResult = fileToJsAst(file);
                 writeAstFile(file, ast, options);
                 try {
-                    let ts: TypeMap | undefined = options.tsTypes ? typeMapForFile(file) : undefined;
-                    if (ts && ts.size !== 0) {
-                        writeTypesFile(file, ts, options);
+                    let typeMap: TypeMap | undefined = tscUtils ? tscUtils.typeMapForFile(file) : undefined;
+                    if (typeMap && typeMap.size !== 0) {
+                        writeTypesFile(file, typeMap, options);
                     }
                 } catch (err) {
                     if (err instanceof Error) {

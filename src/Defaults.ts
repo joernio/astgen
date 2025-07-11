@@ -96,6 +96,7 @@ export const DEFAULT_TSC_TYPE_OPTIONS: number = tsc.TypeFormatFlags.NoTruncation
 
 export const ANY: string = "any"
 export const UNKNOWN: string = "unknown"
+export const UNRESOLVED: string = "/*unresolved*/"
 
 export const STRING_REGEX: RegExp = /^["'`].*["'`]$/
 export const ARRAY_REGEX: RegExp = /.+\[]$/
