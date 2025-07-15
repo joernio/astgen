@@ -1,7 +1,7 @@
 import * as path from "node:path";
 import * as os from "node:os";
 import * as fs from "node:fs";
-import start from "../src/index";
+import start from "../src/AstGenerator";
 import Options from "../src/Options";
 
 async function setupTestFixture(code: string,

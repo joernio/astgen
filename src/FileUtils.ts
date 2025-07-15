@@ -68,6 +68,14 @@ function ignoreFile(options: Options, fileName: string, fullPath: string, extens
         isTooLarge(fullPath)
 }
 
+/**
+ * Asynchronously retrieves all files with the specified extensions from the source directory,
+ * applying exclusion rules defined in the provided options.
+ *
+ * @param options - The options object containing source directory and exclusion patterns.
+ * @param extensions - An array of file extensions to include (e.g., ['.js', '.ts']).
+ * @returns A promise that resolves to an array of absolute file paths matching the extensions and not excluded.
+ */
 export async function filesWithExtensions(options: Options, extensions: string[]): Promise<string[]> {
     const dir = options.src
     const files = await readdirpPromise(dir, {
