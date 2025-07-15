@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import start from "./index"
+import start from "./AstGenerator"
 import Options from "./Options"
 
 import * as path from "node:path"

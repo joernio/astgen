@@ -4,6 +4,18 @@ import tsc from "typescript";
 
 export type TypeMap = Map<string, string>;
 
+/**
+ * Utility class for working with the TypeScript compiler API.
+ *
+ * `TscUtils` provides methods to analyze TypeScript source files, extract type information,
+ * and map AST nodes to their inferred types. It leverages the TypeScript compiler's
+ * `Program` and `TypeChecker` to perform type analysis.
+ *
+ * Main features:
+ * - Generates a map of node positions to their type strings for a given file.
+ * - Safely converts TypeScript types to string representations.
+ * - Identifies signature declarations and function-like nodes.
+ */
 export default class TscUtils {
     private readonly program: tsc.Program;
     private readonly typeChecker: tsc.TypeChecker;
@@ -13,6 +25,16 @@ export default class TscUtils {
         this.typeChecker = this.program.getTypeChecker();
     }
 
+    /**
+     * Generates a map of node positions to their inferred type strings for a given TypeScript source file.
+     *
+     * This method traverses the AST of the specified file, analyzes each node using the TypeScript compiler API,
+     * and records the type information for relevant nodes. The resulting map uses a string key in the format
+     * "start:end" (representing the node's position in the file) and maps it to the node's type as a string.
+     *
+     * @param file - The path to the TypeScript source file to analyze.
+     * @returns A `TypeMap` mapping node positions to their inferred type strings.
+     */
     typeMapForFile(file: string): TypeMap {
         let addType: (node: tsc.Node) => void = (node: tsc.Node): void => {
             if (tsc.isSourceFile(node)) return;
