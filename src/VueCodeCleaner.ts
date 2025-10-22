@@ -1,9 +1,9 @@
-const vueCleaningRegex = /<\/*script.*>|<style[\s\S]*style>|<\/*br>/ig;
-const vueTemplateRegex = /(<template.*>)([\s\S]*)(<\/template>)/ig;
-const vueCommentRegex = /<!--[\s\S]*?-->/ig;
-const vueBindRegex = /(:\[)(\S*?)(])/ig;
-const vuePropRegex = /\s([.:@])(\S*?=)/ig;
-const vueOpenImgTag = /(<img)((?!>)[\s\S]+?)( [^\/]>)/ig;
+const vueCleaningRegex = /<\/*script.*>|<style[\s\S]*style>|<\/*br>/ig
+const vueTemplateRegex = /(<template.*>)([\s\S]*)(<\/template>)/ig
+const vueCommentRegex = /<!--[\s\S]*?-->/ig
+const vueBindRegex = /(:\[)(\S*?)(])/ig
+const vuePropRegex = /\s([.:@])(\S*?=)/ig
+const vueOpenImgTag = /(<img)((?!>)[\s\S]+?)( [^\/]>)/ig
 
 /**
  * Cleans and normalizes Vue single-file component (SFC) code.
@@ -38,5 +38,5 @@ export function cleanVueCode(code: string): string {
                 .replaceAll("{{", "{ ")
                 .replaceAll("}}", " }") +
             grC
-    });
+    })
 }

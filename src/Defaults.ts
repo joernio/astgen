@@ -1,5 +1,5 @@
-import babelParser from "@babel/parser";
-import tsc from "typescript";
+import babelParser from "@babel/parser"
+import tsc from "typescript"
 
 export const JS_EXTENSIONS: string[] = [
     ".js",
@@ -31,12 +31,12 @@ export const IGNORE_DIRS: string[] = [
     "www",
     "dist",
     "build",
-];
+]
 
 export const IGNORE_FILE_PATTERN: RegExp =
-    new RegExp("(chunk-vendors|app~|mock|e2e|conf|test|spec|[.-]min|\\.d)\\.(js|jsx|cjs|mjs|xsjs|xsjslib|ts|tsx)$", "i");
+    new RegExp("(chunk-vendors|app~|mock|e2e|conf|test|spec|[.-]min|\\.d)\\.(js|jsx|cjs|mjs|xsjs|xsjslib|ts|tsx)$", "i")
 
-export const MAX_LOC_IN_FILE: number = 50000;
+export const MAX_LOC_IN_FILE: number = 50000
 
 export const BABEL_PARSER_OPTIONS: babelParser.ParserOptions = {
     sourceType: "unambiguous",
@@ -58,7 +58,7 @@ export const BABEL_PARSER_OPTIONS: babelParser.ParserOptions = {
         "jsx",
         "typescript",
     ],
-};
+}
 
 export const SAFE_BABEL_PARSER_OPTIONS: babelParser.ParserOptions = {
     sourceType: "module",
@@ -76,7 +76,7 @@ export const SAFE_BABEL_PARSER_OPTIONS: babelParser.ParserOptions = {
         "dynamicImport",
         "typescript",
     ],
-};
+}
 
 export const DEFAULT_TSC_OPTIONS: tsc.CompilerOptions = {
     target: tsc.ScriptTarget.ES2020,

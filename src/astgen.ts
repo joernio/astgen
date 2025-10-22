@@ -49,22 +49,22 @@ async function main(argv: string[]) {
                 try {
                     return new RegExp(arg.toString(), "i")
                 } catch (err) {
-                    return undefined;
+                    return undefined
                 }
             },
             description: "Exclude files matching this regex (matches the absolute path)."
         })
         .version()
-        .help("h").parseSync();
+        .help("h").parseSync()
 
     try {
         if (args.output === "ast_out") {
-            args.output = path.join(args.src, args.output);
+            args.output = path.join(args.src, args.output)
         }
-        await start(args);
+        await start(args)
     } catch (e) {
-        console.error(e);
-        process.exit(1);
+        console.error(e)
+        process.exit(1)
     }
 }
 
