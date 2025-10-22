@@ -1,6 +1,6 @@
 {
   "name": "@joernio/astgen",
-  "version": "3.35.0",
+  "version": "3.36.0",
   "description": "Generate JS/TS AST in json format with Babel",
   "exports": "./index.js",
   "keywords": [
@@ -41,7 +41,7 @@
     "@types/n-readlines": "^1.0.6",
     "@types/node": "^18.11.9",
     "@types/yargs": "^17.0.33",
-    "@yao-pkg/pkg": "^6.5.1",
+    "@yao-pkg/pkg": "^6.9.0",
     "jest": "^30.0.4",
     "ts-jest": "^29.3.4"
   }

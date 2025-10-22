@@ -4,17 +4,17 @@
  * @returns {(key: any, value: any) => any} A replacer function for JSON.stringify.
  */
 const getCircularReplacer = () => {
-    const seen = new WeakSet();
+    const seen = new WeakSet()
     return (_: any, value: any): any => {
         if (typeof value === "object" && value !== null) {
             if (seen.has(value)) {
-                return;
+                return
             }
-            seen.add(value);
+            seen.add(value)
         }
-        return value;
-    };
-};
+        return value
+    }
+}
 
 /**
  * Safely serializes objects with potential circular references to a JSON string.

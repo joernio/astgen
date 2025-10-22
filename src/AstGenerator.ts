@@ -22,12 +22,12 @@ import * as fs from "node:fs"
  */
 function TWithTry<T>(errMessage: string, arg: string, f: () => O.Option<T>): O.Option<T> {
     try {
-        return f();
+        return f()
     } catch (err) {
         if (err instanceof Error) {
-            console.warn(errMessage, arg, ":", err.message);
+            console.warn(errMessage, arg, ":", err.message)
         }
-        return O.none();
+        return O.none()
     }
 }
 
@@ -42,8 +42,8 @@ function TWithTry<T>(errMessage: string, arg: string, f: () => O.Option<T>): O.O
  */
 function VoidWithTry(errMessage: string, arg: string, f: () => void): void {
     TWithTry(errMessage, arg, () => {
-        f();
-        return O.none();
+        f()
+        return O.none()
     })
 }
 
@@ -58,7 +58,7 @@ function VoidWithTry(errMessage: string, arg: string, f: () => void): void {
  * @see codeToJsAst - The underlying function used for parsing code strings
  */
 function fileToJsAst(file: string): babelParser.ParseResult {
-    return codeToJsAst(fs.readFileSync(file, "utf-8"));
+    return codeToJsAst(fs.readFileSync(file, "utf-8"))
 }
 
 /**
@@ -76,9 +76,9 @@ function fileToJsAst(file: string): babelParser.ParseResult {
  */
 function codeToJsAst(code: string): babelParser.ParseResult {
     try {
-        return babelParser.parse(code, Defaults.BABEL_PARSER_OPTIONS);
+        return babelParser.parse(code, Defaults.BABEL_PARSER_OPTIONS)
     } catch {
-        return babelParser.parse(code, Defaults.SAFE_BABEL_PARSER_OPTIONS);
+        return babelParser.parse(code, Defaults.SAFE_BABEL_PARSER_OPTIONS)
     }
 }
 
@@ -96,9 +96,9 @@ function codeToJsAst(code: string): babelParser.ParseResult {
  * @see codeToJsAst - The underlying function used for parsing the extracted code
  */
 function toVueAst(file: string): babelParser.ParseResult {
-    const code = fs.readFileSync(file, "utf-8");
+    const code = fs.readFileSync(file, "utf-8")
     const cleanedCode = VueCodeCleaner.cleanVueCode(code)
-    return codeToJsAst(cleanedCode);
+    return codeToJsAst(cleanedCode)
 }
 
 /**
@@ -115,9 +115,9 @@ function toVueAst(file: string): babelParser.ParseResult {
  * @see TscUtils - The utility class used for TypeScript type extraction
  */
 function buildTscUtils(files: string[], options: Options): O.Option<TscUtils> {
-    if (!options.tsTypes || files.length === 0) return O.none();
+    if (!options.tsTypes || files.length === 0) return O.none()
     return TWithTry("Retrieving types", "", () => {
-        return O.some(new TscUtils(files));
+        return O.some(new TscUtils(files))
     })
 }
 
@@ -136,12 +136,12 @@ function buildTscUtils(files: string[], options: Options): O.Option<TscUtils> {
  */
 async function createJSAst(options: Options): Promise<void> {
     try {
-        const srcFiles: string[] = await FileUtils.filesWithExtensions(options, Defaults.JS_EXTENSIONS);
-        const tscUtils: O.Option<TscUtils> = buildTscUtils(srcFiles, options);
+        const srcFiles: string[] = await FileUtils.filesWithExtensions(options, Defaults.JS_EXTENSIONS)
+        const tscUtils: O.Option<TscUtils> = buildTscUtils(srcFiles, options)
         for (const file of srcFiles) {
             VoidWithTry("Parsing", file, () => {
-                const ast: babelParser.ParseResult = fileToJsAst(file);
-                writeAstFile(file, ast, options);
+                const ast: babelParser.ParseResult = fileToJsAst(file)
+                writeAstFile(file, ast, options)
                 VoidWithTry("Retrieving types", file, () => {
                     pipe(
                         tscUtils,
@@ -153,7 +153,7 @@ async function createJSAst(options: Options): Promise<void> {
             })
         }
     } catch (err) {
-        console.error(err);
+        console.error(err)
     }
 }
 
@@ -168,10 +168,10 @@ async function createJSAst(options: Options): Promise<void> {
  * @returns A Promise that resolves when all Vue files have been processed.
  */
 async function createVueAst(options: Options): Promise<void> {
-    const srcFiles: string[] = await FileUtils.filesWithExtensions(options, [".vue"]);
+    const srcFiles: string[] = await FileUtils.filesWithExtensions(options, [".vue"])
     for (const file of srcFiles) {
         VoidWithTry("", file, () => {
-            writeAstFile(file, toVueAst(file), options);
+            writeAstFile(file, toVueAst(file), options)
         })
     }
 }
@@ -189,15 +189,15 @@ async function createVueAst(options: Options): Promise<void> {
  */
 function writeAstFile(file: string, ast: babelParser.ParseResult, options: Options): void {
     const relativePath: string = path.relative(options.src, file)
-    const outAstFile: string = path.join(options.output, relativePath + ".json");
+    const outAstFile: string = path.join(options.output, relativePath + ".json")
     const data = {
         fullName: file,
         relativeName: relativePath,
         ast: ast,
-    };
-    fs.mkdirSync(path.dirname(outAstFile), {recursive: true});
-    fs.writeFileSync(outAstFile, JsonUtils.stringifyCircular(data));
-    console.log("Converted AST for", relativePath, "to", outAstFile);
+    }
+    fs.mkdirSync(path.dirname(outAstFile), {recursive: true})
+    fs.writeFileSync(outAstFile, JsonUtils.stringifyCircular(data))
+    console.log("Converted AST for", relativePath, "to", outAstFile)
 }
 
 /**
@@ -212,10 +212,10 @@ function writeAstFile(file: string, ast: babelParser.ParseResult, options: Optio
  */
 function writeTypesFile(file: string, seenTypes: TypeMap, options: Options): void {
     const relativePath: string = path.relative(options.src, file)
-    const outTypeFile: string = path.join(options.output, relativePath + ".typemap");
-    fs.mkdirSync(path.dirname(outTypeFile), {recursive: true});
-    fs.writeFileSync(outTypeFile, JsonUtils.stringify(Object.fromEntries(seenTypes)));
-    console.log("Converted types for", relativePath, "to", outTypeFile);
+    const outTypeFile: string = path.join(options.output, relativePath + ".typemap")
+    fs.mkdirSync(path.dirname(outTypeFile), {recursive: true})
+    fs.writeFileSync(outTypeFile, JsonUtils.stringify(Object.fromEntries(seenTypes)))
+    console.log("Converted types for", relativePath, "to", outTypeFile)
 }
 
 /**
@@ -229,21 +229,15 @@ function writeTypesFile(file: string, seenTypes: TypeMap, options: Options): voi
  * @returns A Promise that resolves when AST generation is complete or the process exits on error.
  */
 async function createXAst(options: Options): Promise<void> {
-    const srcDir: string = options.src;
-    try {
-        fs.accessSync(srcDir, fs.constants.R_OK);
-    } catch (err) {
-        console.error(srcDir, "is invalid");
-        process.exit(1);
-    }
+    const srcDir: string = options.src
     if (
-        fs.existsSync(path.join(srcDir, "package.json")) ||
-        fs.existsSync(path.join(srcDir, "rush.json"))
+        FileUtils.fileExistsAndIsReadable(path.join(srcDir, "package.json")) ||
+        FileUtils.fileExistsAndIsReadable(path.join(srcDir, "rush.json"))
     ) {
-        return await createJSAst(options);
+        return await createJSAst(options)
     }
-    console.error(srcDir, "unknown project type");
-    process.exit(1);
+    console.error("Unknown project type:", srcDir)
+    process.exit(1)
 }
 
 /**
@@ -259,6 +253,12 @@ async function createXAst(options: Options): Promise<void> {
  * @returns A Promise that resolves when the AST generation process is complete.
  */
 export default async function start(options: Options): Promise<void> {
+    const srcDir = options.src
+    if (!FileUtils.fileExistsAndIsReadable(srcDir)) {
+        console.error("Source directory does not exist or is not readable:", srcDir)
+        process.exit(1)
+    }
+
     const type: string = (options.type || "").toLowerCase()
     switch (type) {
         case "nodejs":
@@ -266,10 +266,10 @@ export default async function start(options: Options): Promise<void> {
         case "javascript":
         case "typescript":
         case "ts":
-            return await createJSAst(options);
+            return await createJSAst(options)
         case "vue":
-            return await createVueAst(options);
+            return await createVueAst(options)
         default:
-            return await createXAst(options);
+            return await createXAst(options)
     }
 }

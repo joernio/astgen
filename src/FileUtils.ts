@@ -1,16 +1,16 @@
-import Options from "./Options";
-import * as Defaults from "./Defaults";
+import Options from "./Options"
+import * as Defaults from "./Defaults"
 
-import {readdirpPromise} from 'readdirp';
-import * as fs from "node:fs";
-import nReadlines from "n-readlines";
+import {readdirpPromise} from 'readdirp'
+import * as fs from "node:fs"
+import nReadlines from "n-readlines"
 import * as path from "node:path"
 
 function countFileLines(filePath: string): number {
-    const broadbandLines = new nReadlines(filePath);
-    let lineNumber = 1;
+    const broadbandLines = new nReadlines(filePath)
+    let lineNumber = 1
     while (broadbandLines.next()) {
-        lineNumber++;
+        lineNumber++
     }
     return lineNumber
 }
@@ -43,18 +43,18 @@ function ignoreDirectory(options: Options, dirName: string, fullPath: string): b
 
 function isEmscripten(fileWithDir: string): boolean {
     if (fs.readFileSync(fileWithDir, "utf-8").toString().includes("// EMSCRIPTEN_START_ASM")) {
-        console.warn("Parsing", fileWithDir, ":", "File skipped as it contains EMSCRIPTEN code");
-        return true;
+        console.warn("Parsing", fileWithDir, ":", "File skipped as it contains EMSCRIPTEN code")
+        return true
     }
-    return false;
+    return false
 }
 
 function isTooLarge(fileWithDir: string): boolean {
     if (countFileLines(fileWithDir) > Defaults.MAX_LOC_IN_FILE) {
-        console.warn(fileWithDir, "more than", Defaults.MAX_LOC_IN_FILE, "lines of code");
-        return true;
+        console.warn(fileWithDir, "more than", Defaults.MAX_LOC_IN_FILE, "lines of code")
+        return true
     }
-    return false;
+    return false
 }
 
 function ignoreFile(options: Options, fileName: string, fullPath: string, extensions: string[]): boolean {
@@ -82,7 +82,22 @@ export async function filesWithExtensions(options: Options, extensions: string[]
         fileFilter: (f) => !ignoreFile(options, f.basename, f.fullPath, extensions),
         directoryFilter: (d) => !ignoreDirectory(options, d.basename, d.fullPath),
         lstat: true
-    });
+    })
     // @ts-ignore
-    return files.map(file => file.fullPath);
+    return files.map(file => file.fullPath)
+}
+
+/**
+ * Checks if the folder or file at the given path exists and is readable.
+ *
+ * @param path - The path to the folder or file to check.
+ * @returns True if the folder or file exists and is readable; false otherwise.
+ */
+export function fileExistsAndIsReadable(path: string): boolean {
+    try {
+        fs.accessSync(path, fs.constants.R_OK)
+        return true
+    } catch (err) {
+        return false
+    }
 }
