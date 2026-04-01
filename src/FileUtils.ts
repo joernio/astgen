@@ -6,15 +6,6 @@ import * as fs from "node:fs"
 import nReadlines from "n-readlines"
 import * as path from "node:path"
 
-function countFileLines(filePath: string): number {
-    const broadbandLines = new nReadlines(filePath)
-    let lineNumber = 1
-    while (broadbandLines.next()) {
-        lineNumber++
-    }
-    return lineNumber
-}
-
 function dirIsInIgnorePath(options: Options, fullPath: string, ignorePath: string): boolean {
     if (path.isAbsolute(ignorePath)) {
         return fullPath.startsWith(ignorePath)
@@ -49,10 +40,28 @@ function isEmscripten(fileWithDir: string): boolean {
     return false
 }
 
-function isTooLarge(fileWithDir: string): boolean {
-    if (countFileLines(fileWithDir) > Defaults.MAX_LOC_IN_FILE) {
-        console.warn(fileWithDir, "more than", Defaults.MAX_LOC_IN_FILE, "lines of code")
+function isTooBig(fileWithDir: string): boolean {
+    if (fs.statSync(fileWithDir).size > Defaults.MAX_FILE_SIZE_BYTES) {
+        console.warn(fileWithDir, "exceeds maximum file size of", Defaults.MAX_FILE_SIZE_BYTES, "bytes")
         return true
+    }
+    return false
+}
+
+function isTooLargeOrHasLongLines(fileWithDir: string): boolean {
+    const lines = new nReadlines(fileWithDir)
+    let lineNumber = 0
+    let line: Buffer | false
+    while ((line = lines.next()) !== false) {
+        lineNumber++
+        if (line.length > Defaults.MAX_LINE_LENGTH) {
+            console.warn(fileWithDir, "line", lineNumber, "exceeds", Defaults.MAX_LINE_LENGTH, "bytes")
+            return true
+        }
+        if (lineNumber > Defaults.MAX_LOC_IN_FILE) {
+            console.warn(fileWithDir, "more than", Defaults.MAX_LOC_IN_FILE, "lines of code")
+            return true
+        }
     }
     return false
 }
@@ -64,8 +73,9 @@ function ignoreFile(options: Options, fileName: string, fullPath: string, extens
         Defaults.IGNORE_FILE_PATTERN.test(fileName) ||
         options["exclude-file"].some((e: string) => fileIsInIgnorePath(options, fullPath, e)) ||
         options["exclude-regex"]?.test(fullPath) ||
-        isEmscripten(fullPath) ||
-        isTooLarge(fullPath)
+        isTooBig(fullPath) ||
+        isTooLargeOrHasLongLines(fullPath) ||
+        isEmscripten(fullPath)
 }
 
 /**
