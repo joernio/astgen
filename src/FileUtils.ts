@@ -1,7 +1,7 @@
 import Options from "./Options"
 import * as Defaults from "./Defaults"
 
-import {readdirpPromise} from 'readdirp'
+import {readdirp} from 'readdirp'
 import * as fs from "node:fs"
 import nReadlines from "n-readlines"
 import * as path from "node:path"
@@ -32,14 +32,6 @@ function ignoreDirectory(options: Options, dirName: string, fullPath: string): b
         Defaults.IGNORE_DIRS.includes(dirName.toLowerCase())
 }
 
-function isEmscripten(fileWithDir: string): boolean {
-    if (fs.readFileSync(fileWithDir, "utf-8").toString().includes("// EMSCRIPTEN_START_ASM")) {
-        console.warn("Parsing", fileWithDir, ":", "File skipped as it contains EMSCRIPTEN code")
-        return true
-    }
-    return false
-}
-
 function isTooBig(fileWithDir: string): boolean {
     if (fs.statSync(fileWithDir).size > Defaults.MAX_FILE_SIZE_BYTES) {
         console.warn(fileWithDir, "exceeds maximum file size of", Defaults.MAX_FILE_SIZE_BYTES, "bytes")
@@ -48,7 +40,9 @@ function isTooBig(fileWithDir: string): boolean {
     return false
 }
 
-function isTooLargeOrHasLongLines(fileWithDir: string): boolean {
+const EMSCRIPTEN_MARKER = Buffer.from("// EMSCRIPTEN_START_ASM")
+
+function shouldSkipFileContent(fileWithDir: string): boolean {
     const lines = new nReadlines(fileWithDir)
     let lineNumber = 0
     let line: Buffer | false
@@ -62,25 +56,34 @@ function isTooLargeOrHasLongLines(fileWithDir: string): boolean {
             console.warn(fileWithDir, "more than", Defaults.MAX_LOC_IN_FILE, "lines of code")
             return true
         }
+        if (line.includes(EMSCRIPTEN_MARKER)) {
+            console.warn("Parsing", fileWithDir, ":", "File skipped as it contains EMSCRIPTEN code")
+            return true
+        }
     }
     return false
 }
 
-function ignoreFile(options: Options, fileName: string, fullPath: string, extensions: string[]): boolean {
+function ignoreFileByName(options: Options, fileName: string, fullPath: string, extensions: string[]): boolean {
     return !extensions.some((e: string) => fileName.endsWith(e)) ||
         fileName.startsWith(".") ||
         fileName.startsWith("__") ||
         Defaults.IGNORE_FILE_PATTERN.test(fileName) ||
         options["exclude-file"].some((e: string) => fileIsInIgnorePath(options, fullPath, e)) ||
-        options["exclude-regex"]?.test(fullPath) ||
-        isTooBig(fullPath) ||
-        isTooLargeOrHasLongLines(fullPath) ||
-        isEmscripten(fullPath)
+        (options["exclude-regex"]?.test(fullPath) ?? false)
+}
+
+function shouldSkipFileIO(fullPath: string): boolean {
+    return isTooBig(fullPath) || shouldSkipFileContent(fullPath)
 }
 
 /**
  * Asynchronously retrieves all files with the specified extensions from the source directory,
  * applying exclusion rules defined in the provided options.
+ *
+ * Uses the streaming readdirp API so that entry objects can be GC'd incrementally.
+ * Cheap name-based filters run during traversal; expensive I/O checks (file size,
+ * line scanning) run per-entry as entries stream in.
  *
  * @param options - The options object containing source directory and exclusion patterns.
  * @param extensions - An array of file extensions to include (e.g., ['.js', '.ts']).
@@ -88,13 +91,18 @@ function ignoreFile(options: Options, fileName: string, fullPath: string, extens
  */
 export async function filesWithExtensions(options: Options, extensions: string[]): Promise<string[]> {
     const dir = options.src
-    const files = await readdirpPromise(dir, {
-        fileFilter: (f) => !ignoreFile(options, f.basename, f.fullPath, extensions),
+    const stream = readdirp(dir, {
+        fileFilter: (f) => !ignoreFileByName(options, f.basename, f.fullPath, extensions),
         directoryFilter: (d) => !ignoreDirectory(options, d.basename, d.fullPath),
         lstat: true
     })
-    // @ts-ignore
-    return files.map(file => file.fullPath)
+    const files: string[] = []
+    for await (const entry of stream) {
+        if (!shouldSkipFileIO(entry.fullPath)) {
+            files.push(entry.fullPath)
+        }
+    }
+    return files
 }
 
 /**

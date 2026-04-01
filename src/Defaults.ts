@@ -87,8 +87,6 @@ export const DEFAULT_TSC_OPTIONS: tsc.CompilerOptions = {
     allowUnreachableCode: true,
     allowUnusedLabels: true,
     alwaysStrict: false,
-    ignoreDeprecations: "5.0",
-    noStrictGenericChecks: true,
     noUncheckedIndexedAccess: false,
     noPropertyAccessFromIndexSignature: false,
     removeComments: true
