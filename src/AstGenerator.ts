@@ -196,7 +196,7 @@ function writeAstFile(file: string, ast: babelParser.ParseResult, options: Optio
         ast: ast,
     }
     fs.mkdirSync(path.dirname(outAstFile), {recursive: true})
-    fs.writeFileSync(outAstFile, JsonUtils.stringifyCircular(data))
+    JsonUtils.writeJsonStreamCircular(outAstFile, data)
     console.log("Converted AST for", relativePath, "to", outAstFile)
 }
 
@@ -214,7 +214,7 @@ function writeTypesFile(file: string, seenTypes: TypeMap, options: Options): voi
     const relativePath: string = path.relative(options.src, file)
     const outTypeFile: string = path.join(options.output, relativePath + ".typemap")
     fs.mkdirSync(path.dirname(outTypeFile), {recursive: true})
-    fs.writeFileSync(outTypeFile, JsonUtils.stringify(Object.fromEntries(seenTypes)))
+    JsonUtils.writeMapToJsonFile(outTypeFile, seenTypes)
     console.log("Converted types for", relativePath, "to", outTypeFile)
 }
 
