@@ -155,4 +155,42 @@ describe('astgen basic functionality', () => {
         })
     })
 
+    it('should skip files with more than 50000 lines', async () => {
+        const lines = Array(50001).fill('const x = 1;').join('\n')
+
+        await setupTestFixture(lines, "huge.ts", {}, (tmpDir: string, testFile: string) => {
+            const outFile = path.join(tmpDir, "ast_out", "huge.ts.json")
+            expect(fs.existsSync(outFile)).toBe(false)
+        })
+    })
+
+    it('should skip files with a line longer than 10000 bytes', async () => {
+        const longLine = 'const x = "' + 'a'.repeat(10001) + '";'
+        const code = `const y = 1;\n${longLine}\nconst z = 2;`
+
+        await setupTestFixture(code, "longline.ts", {}, (tmpDir: string, testFile: string) => {
+            const outFile = path.join(tmpDir, "ast_out", "longline.ts.json")
+            expect(fs.existsSync(outFile)).toBe(false)
+        })
+    })
+
+    it('should skip files larger than 5MB', async () => {
+        const bigContent = 'x'.repeat(5 * 1024 * 1024 + 1)
+
+        await setupTestFixture(bigContent, "huge.ts", {}, (tmpDir: string, testFile: string) => {
+            const outFile = path.join(tmpDir, "ast_out", "huge.ts.json")
+            expect(fs.existsSync(outFile)).toBe(false)
+        })
+    })
+
+    it('should process files just under all size thresholds', async () => {
+        const normalLine = 'const x = "' + 'a'.repeat(9980) + '";'
+        const code = `${normalLine}\nconst y = 1;`
+
+        await setupTestFixture(code, "borderline.ts", {}, (tmpDir: string, testFile: string) => {
+            const outFile = path.join(tmpDir, "ast_out", "borderline.ts.json")
+            expect(fs.existsSync(outFile)).toBe(true)
+        })
+    })
+
 })

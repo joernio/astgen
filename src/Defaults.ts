@@ -37,6 +37,8 @@ export const IGNORE_FILE_PATTERN: RegExp =
     new RegExp("(chunk-vendors|app~|mock|e2e|conf|test|spec|[.-]min|\\.d)\\.(js|jsx|cjs|mjs|xsjs|xsjslib|ts|tsx)$", "i")
 
 export const MAX_LOC_IN_FILE: number = 50000
+export const MAX_FILE_SIZE_BYTES: number = 5 * 1024 * 1024
+export const MAX_LINE_LENGTH: number = 10_000
 
 export const BABEL_PARSER_OPTIONS: babelParser.ParserOptions = {
     sourceType: "unambiguous",

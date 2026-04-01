@@ -39,6 +39,30 @@ yarn test
 
 This will use `jest` with `ts-jest` to run the tests in `test/`.
 
+## Regression Testing
+
+The regression harness compares AST and type-map output between two versions of astgen (base branch vs. PR) across two real-world TypeScript corpora: [typeorm@0.3.21](https://github.com/typeorm/typeorm) and [fastify@v5.3.3](https://github.com/fastify/fastify).
+
+**Run locally** (compares current branch against `main`):
+
+```bash
+yarn regression
+```
+
+To compare against a different base branch:
+
+```bash
+python3 scripts/regression-local.py --base-branch <branch>
+```
+
+The script builds both versions, clones the corpora, runs astgen on each, and prints a Markdown report to stdout showing:
+
+- AST and typemap file counts and total sizes
+- Wall-clock execution time
+- Per-file content diffs (collapsible, truncated to 200 lines)
+
+**CI:** The regression workflow runs automatically on every pull request (`.github/workflows/regression.yml`) and posts or updates a comment on the PR with the full report.
+
 ## Getting Help
 
 ```bash
