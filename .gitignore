@@ -76,6 +76,9 @@ typings/
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 
+# pycache
+__pycache__
+
 # Next.js build output
 .next
 
@@ -122,3 +125,6 @@ astgen-linux-arm64~
 astgen-macos-arm
 astgen-macos
 astgen-win.exe
+
+# Git worktrees
+.worktrees/
