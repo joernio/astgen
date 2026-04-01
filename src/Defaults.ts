@@ -94,7 +94,8 @@ export const DEFAULT_TSC_OPTIONS: tsc.CompilerOptions = {
     removeComments: true
 }
 
-export const DEFAULT_TSC_TYPE_OPTIONS: number = tsc.TypeFormatFlags.NoTruncation | tsc.TypeFormatFlags.InTypeAlias
+export const MAX_TYPE_STRING_LENGTH: number = 500
+export const DEFAULT_TSC_TYPE_OPTIONS: number = tsc.TypeFormatFlags.InTypeAlias
 
 export const ANY: string = "any"
 export const UNKNOWN: string = "unknown"
