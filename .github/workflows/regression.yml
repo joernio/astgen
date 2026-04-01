@@ -32,6 +32,7 @@ jobs:
       - name: Build base version
         run: |
           set -e
+          git fetch origin ${{ github.base_ref }}
           git worktree add ../astgen-base "origin/${{ github.base_ref }}"
           (cd ../astgen-base && yarn install && yarn build)
           cp -r ../astgen-base/dist dist-base
@@ -39,14 +40,32 @@ jobs:
 
       - name: Run regression script
         run: |
-          python3 scripts/regression.py --base-dist dist-base --pr-dist dist-pr --pr-number "${{ github.event.pull_request.number }}" > regression-report.md
+          BASE_SHA=$(git rev-parse --short "origin/${{ github.base_ref }}")
+          PR_SHA=$(git rev-parse --short HEAD)
+          python3 scripts/regression.py \
+            --base-dist dist-base \
+            --pr-dist dist-pr \
+            --pr-number "${{ github.event.pull_request.number }}" \
+            --base-ref "${{ github.base_ref }} @ ${BASE_SHA}" \
+            --pr-ref "${{ github.head_ref }} @ ${PR_SHA}" \
+            --output-diffs regression-diffs \
+            > regression-report.md
+
+      - name: Upload diff artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: regression-diffs
+          path: regression-diffs/
+          if-no-files-found: ignore
 
       - name: Post PR comment
         uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
-            const body = fs.readFileSync('regression-report.md', 'utf8');
+            let body = fs.readFileSync('regression-report.md', 'utf8');
+            const runUrl = `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+            body += `\n\n---\n📎 Full diff files available as [workflow artifacts](${runUrl}).`;
             const marker = '<!-- astgen-regression -->';
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,

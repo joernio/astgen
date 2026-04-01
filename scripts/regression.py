@@ -9,6 +9,7 @@ Usage:
 import argparse
 import difflib
 import filecmp
+import json
 import os
 import pathlib
 import shutil
@@ -126,16 +127,76 @@ def run_astgen(dist_dir: str, input_dir: str, output_dir: str) -> tuple[bool, fl
         return False, elapsed
 
 
+def _normalize_json(path: pathlib.Path) -> list[str]:
+    """Parse a JSON file and re-serialize it with stable formatting for diffing."""
+    try:
+        obj = json.loads(path.read_text(errors="replace"))
+        return (json.dumps(obj, indent=2, sort_keys=True) + "\n").splitlines(keepends=True)
+    except Exception:
+        # Fall back to raw text if JSON is malformed
+        return path.read_text(errors="replace").splitlines(keepends=True)
+
+
+def _json_diff_summary(base_path: pathlib.Path, pr_path: pathlib.Path) -> str:
+    """
+    Return a one-line human-readable summary of what changed between two JSON files,
+    e.g. '3 keys added, 1 key removed, 7 values changed'.
+    Falls back to an empty string on parse error.
+    """
+    try:
+        base_obj = json.loads(base_path.read_text(errors="replace"))
+        pr_obj = json.loads(pr_path.read_text(errors="replace"))
+    except Exception:
+        return ""
+
+    added = removed = changed = 0
+
+    def _walk(b, p, depth: int = 0) -> None:
+        nonlocal added, removed, changed
+        if depth > 20:
+            return
+        if isinstance(b, dict) and isinstance(p, dict):
+            for k in set(b) | set(p):
+                if k not in b:
+                    added += 1
+                elif k not in p:
+                    removed += 1
+                else:
+                    _walk(b[k], p[k], depth + 1)
+        elif isinstance(b, list) and isinstance(p, list):
+            for i in range(min(len(b), len(p))):
+                _walk(b[i], p[i], depth + 1)
+            extra = len(p) - len(b)
+            if extra > 0:
+                added += extra
+            elif extra < 0:
+                removed += -extra
+        else:
+            if b != p:
+                changed += 1
+
+    _walk(base_obj, pr_obj)
+
+    parts = []
+    if added:
+        parts.append(f"{added} added")
+    if removed:
+        parts.append(f"{removed} removed")
+    if changed:
+        parts.append(f"{changed} changed")
+    return ", ".join(parts) if parts else "whitespace/ordering only"
+
+
 def compare_outputs(base_dir: pathlib.Path, pr_dir: pathlib.Path) -> dict:
     """
-    Compare two output directories byte-by-byte.
+    Compare two output directories.
 
     Returns:
         {
             "only_in_base": [relative_path, ...],
             "only_in_pr": [relative_path, ...],
-            "ast_diffs": [(rel_path, unified_diff_lines), ...],
-            "typemap_diffs": [(rel_path, unified_diff_lines), ...],
+            "ast_diffs": [(rel_path, diff_lines, summary), ...],
+            "typemap_diffs": [(rel_path, diff_lines, summary), ...],
         }
     """
     only_in_base = []
@@ -170,13 +231,10 @@ def compare_outputs(base_dir: pathlib.Path, pr_dir: pathlib.Path) -> dict:
         pp = pr_files[rel]
         if bp.stat().st_size == pp.stat().st_size and filecmp.cmp(str(bp), str(pp), shallow=False):
             continue
-        # Files differ — generate unified diff
-        try:
-            base_text = bp.read_text(errors="replace").splitlines(keepends=True)
-            pr_text = pp.read_text(errors="replace").splitlines(keepends=True)
-        except Exception:
-            base_text = []
-            pr_text = []
+
+        base_text = _normalize_json(bp)
+        pr_text = _normalize_json(pp)
+        summary = _json_diff_summary(bp, pp)
 
         diff_lines = list(
             difflib.unified_diff(
@@ -188,9 +246,9 @@ def compare_outputs(base_dir: pathlib.Path, pr_dir: pathlib.Path) -> dict:
         )
 
         if rel.endswith(".typemap"):
-            typemap_diffs.append((rel, diff_lines))
+            typemap_diffs.append((rel, diff_lines, summary))
         elif rel.endswith(".json"):
-            ast_diffs.append((rel, diff_lines))
+            ast_diffs.append((rel, diff_lines, summary))
 
     return {
         "only_in_base": only_in_base,
@@ -200,10 +258,38 @@ def compare_outputs(base_dir: pathlib.Path, pr_dir: pathlib.Path) -> dict:
     }
 
 
+def write_diff_files(diffs_dir: pathlib.Path, corpus_results: list) -> None:
+    """
+    Write full (untruncated) diff content to files in diffs_dir.
+
+    For each corpus that has diffs, creates:
+      <corpus-name>-ast.diff      — if AST diffs exist
+      <corpus-name>-typemap.diff  — if typemap diffs exist
+    """
+    diffs_dir.mkdir(parents=True, exist_ok=True)
+    for result in corpus_results:
+        name = result["name"]
+        cmp = result["comparison"]
+
+        for kind, key in (("ast", "ast_diffs"), ("typemap", "typemap_diffs")):
+            diffs = cmp[key]
+            if not diffs:
+                continue
+            parts = []
+            for rel, diff_lines, summary in diffs:
+                header = f"# {rel}"
+                if summary:
+                    header += f"  [{summary}]"
+                parts.append(header + "\n")
+                parts.append("".join(diff_lines))
+            (diffs_dir / f"{name}-{kind}.diff").write_text("".join(parts))
+
+
 def build_diff_details(diffs: list, kind: str, max_total_lines: int = 200) -> str:
     """
-    Render a collapsible <details> block with truncated unified diffs.
+    Render a collapsible <details> block with truncated normalized diffs.
     kind is 'AST' or 'typemap'.
+    Each entry in diffs is a (rel_path, diff_lines, summary) tuple.
     """
     n = len(diffs)
     if n == 0:
@@ -212,9 +298,15 @@ def build_diff_details(diffs: list, kind: str, max_total_lines: int = 200) -> st
     lines_used = 0
     diff_text_parts = []
 
-    for rel, diff_lines in diffs:
+    for rel, diff_lines, summary in diffs:
         if lines_used >= max_total_lines:
+            remaining = n - len(diff_text_parts)
+            diff_text_parts.append(f"\n... ({remaining} more files not shown)\n")
             break
+        header = f"# {rel}"
+        if summary:
+            header += f"  [{summary}]"
+        diff_text_parts.append(header + "\n")
         chunk = diff_lines[: max_total_lines - lines_used]
         lines_used += len(chunk)
         diff_text_parts.append("".join(chunk))
@@ -335,6 +427,24 @@ def main() -> None:
         metavar="N",
         help="PR number to display in the report header (e.g. 42).",
     )
+    parser.add_argument(
+        "--base-ref",
+        default=None,
+        metavar="REF",
+        help="Human-readable base ref label (e.g. 'main @ abc1234').",
+    )
+    parser.add_argument(
+        "--pr-ref",
+        default=None,
+        metavar="REF",
+        help="Human-readable PR ref label (e.g. 'my-branch @ def5678').",
+    )
+    parser.add_argument(
+        "--output-diffs",
+        default=None,
+        metavar="PATH",
+        help="Directory to write full (untruncated) diff files into.",
+    )
     args = parser.parse_args()
 
     base_dist = os.path.abspath(args.base_dist)
@@ -416,16 +526,28 @@ def main() -> None:
         shutil.rmtree(tmpdir, ignore_errors=True)
 
     # Build report
+    provenance = []
+    if args.base_ref:
+        provenance.append(f"**Base:** `{args.base_ref}`")
+    if args.pr_ref:
+        provenance.append(f"**PR:** `{args.pr_ref}`")
+
     report_parts = [
         "<!-- astgen-regression -->",
         "## astgen Regression Report",
         "",
     ]
+    if provenance:
+        report_parts.append(" | ".join(provenance))
+        report_parts.append("")
 
     for result in corpus_results:
         section = render_corpus_section(result["name"], result["label"], result, pr_label)
         report_parts.append(section)
         report_parts.append("")
+
+    if args.output_diffs:
+        write_diff_files(pathlib.Path(args.output_diffs), corpus_results)
 
     print("\n".join(report_parts))
 

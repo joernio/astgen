@@ -49,6 +49,17 @@ def current_branch(repo_root: pathlib.Path) -> str:
     return result.stdout.decode().strip()
 
 
+def git_short_sha(repo_root: pathlib.Path, ref: str) -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "--short", ref],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+        cwd=str(repo_root),
+    )
+    return result.stdout.decode().strip()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Build current branch and base branch, then run regression harness.",
@@ -70,7 +81,8 @@ def main() -> None:
         print(f"ERROR: {regression_script} not found.", file=sys.stderr)
         sys.exit(1)
 
-    print(f"[local-regression] Current branch: {branch}", file=sys.stderr)
+    pr_sha = git_short_sha(repo_root, "HEAD")
+    print(f"[local-regression] Current branch: {branch} @ {pr_sha}", file=sys.stderr)
     print(f"[local-regression] Base branch:    {args.base_branch}", file=sys.stderr)
 
     # Keep dist-pr and dist-base inside the repo root so that Node can resolve
@@ -89,9 +101,12 @@ def main() -> None:
         shutil.copytree(str(repo_root / "dist"), dist_pr)
 
         # Build base version via git worktree
-        print(f"[local-regression] Checking out {args.base_branch} into worktree...", file=sys.stderr)
+        print(f"[local-regression] Fetching {args.base_branch} from origin...", file=sys.stderr)
+        run(["git", "fetch", "origin", args.base_branch], cwd=str(repo_root))
+        base_sha = git_short_sha(repo_root, f"origin/{args.base_branch}")
+        print(f"[local-regression] Checking out origin/{args.base_branch} @ {base_sha} into worktree...", file=sys.stderr)
         run(
-            ["git", "worktree", "add", worktree_path, args.base_branch],
+            ["git", "worktree", "add", worktree_path, f"origin/{args.base_branch}"],
             cwd=str(repo_root),
         )
         print("[local-regression] Building base version...", file=sys.stderr)
@@ -107,7 +122,13 @@ def main() -> None:
         # Run regression script — output goes directly to stdout
         print("[local-regression] Running regression harness...\n", file=sys.stderr)
         subprocess.run(
-            [sys.executable, str(regression_script), "--base-dist", dist_base, "--pr-dist", dist_pr],
+            [
+                sys.executable, str(regression_script),
+                "--base-dist", dist_base,
+                "--pr-dist", dist_pr,
+                "--base-ref", f"{args.base_branch} @ {base_sha}",
+                "--pr-ref", f"{branch} @ {pr_sha}",
+            ],
             check=False,
         )
 

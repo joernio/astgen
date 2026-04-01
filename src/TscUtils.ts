@@ -37,7 +37,7 @@ export default class TscUtils {
      */
     typeMapForFile(file: string): TypeMap {
         let addType: (node: tsc.Node) => void = (node: tsc.Node): void => {
-            if (tsc.isSourceFile(node)) return
+            if (!this.shouldResolveType(node)) return
             let typeStr
             if (this.isSignatureDeclaration(node)) {
                 const signature: tsc.Signature = this.typeChecker.getSignatureFromDeclaration(node)!
@@ -78,6 +78,7 @@ export default class TscUtils {
         try {
             const tpe: string = this.typeChecker.typeToString(node, undefined, Defaults.DEFAULT_TSC_TYPE_OPTIONS)
             if (tpe.length === 0) return Defaults.ANY
+            if (tpe.length > Defaults.MAX_TYPE_STRING_LENGTH) return Defaults.ANY
             if (tpe == Defaults.UNKNOWN) return Defaults.ANY
             if (tpe.startsWith(Defaults.UNRESOLVED)) return Defaults.ANY
             if (Defaults.STRING_REGEX.test(tpe)) return "string"
@@ -92,6 +93,18 @@ export default class TscUtils {
         return tsc.isSetAccessor(node) || tsc.isGetAccessor(node) ||
             tsc.isConstructSignatureDeclaration(node) || tsc.isMethodDeclaration(node) ||
             tsc.isFunctionDeclaration(node) || tsc.isConstructorDeclaration(node)
+    }
+
+    private shouldResolveType(node: tsc.Node): boolean {
+        const k = node.kind
+        if (k === tsc.SyntaxKind.SourceFile) return false
+        if (k === tsc.SyntaxKind.EndOfFileToken) return false
+        if (k === tsc.SyntaxKind.SyntaxList) return false
+        if (k >= tsc.SyntaxKind.FirstKeyword && k <= tsc.SyntaxKind.LastKeyword) return false
+        if (k >= tsc.SyntaxKind.FirstPunctuation && k <= tsc.SyntaxKind.LastPunctuation) return false
+        if (k === tsc.SyntaxKind.Decorator) return false
+        if (k >= tsc.SyntaxKind.FirstStatement && k <= tsc.SyntaxKind.LastStatement) return false
+        return true
     }
 
 }
