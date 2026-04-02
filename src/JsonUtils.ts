@@ -5,18 +5,21 @@ const STREAM_BUFFER_SIZE = 64 * 1024
 
 function withBufferedWriter(filePath: string, fn: (write: (s: string) => void) => void): void {
     const fd = fs.openSync(filePath, "w")
-    let buffer = ""
+    const chunks: string[] = []
+    let length = 0
 
     function flush(): void {
-        if (buffer.length > 0) {
-            fs.writeSync(fd, buffer)
-            buffer = ""
+        if (chunks.length > 0) {
+            fs.writeSync(fd, chunks.join(""))
+            chunks.length = 0
+            length = 0
         }
     }
 
     function write(s: string): void {
-        buffer += s
-        if (buffer.length >= STREAM_BUFFER_SIZE) flush()
+        chunks.push(s)
+        length += s.length
+        if (length >= STREAM_BUFFER_SIZE) flush()
     }
 
     try {

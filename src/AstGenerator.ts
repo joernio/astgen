@@ -1,51 +1,30 @@
 import Options from "./Options"
 import * as Defaults from "./Defaults"
 import * as FileUtils from "./FileUtils"
-import type { FileEntry } from "./FileUtils"
 import * as JsonUtils from "./JsonUtils"
 import * as VueCodeCleaner from "./VueCodeCleaner"
 import TscUtils, {TypeMap} from "./TscUtils"
 
-import {Option as O, pipe} from "effect"
 import * as babelParser from "@babel/parser"
 import * as path from "node:path"
 import * as fs from "node:fs"
 
 /**
- * Executes a function that returns an Option<T> and catches any exceptions.
- * Returns O.none() in case of error and logs a warning with the error message and argument.
- *
- * @template T - The return type of the Option.
- * @param errMessage - The error message to be logged when an exception occurs.
- * @param arg - An argument that provides better identification in the log.
- * @param f - The function to execute that returns an Option<T>.
- * @returns O.some<T> on success, otherwise O.none().
- */
-function TWithTry<T>(errMessage: string, arg: string, f: () => O.Option<T>): O.Option<T> {
-    try {
-        return f()
-    } catch (err) {
-        if (err instanceof Error) {
-            console.warn(errMessage, arg, ":", err.message)
-        }
-        return O.none()
-    }
-}
-
-/**
  * Executes a void function and catches any exceptions.
  * In case of an error, logs a warning with the error message and argument.
- * This is a wrapper around TWithTry for functions that don't return a value.
  *
  * @param errMessage - The error message to be logged when an exception occurs.
  * @param arg - An argument that provides better identification in the log.
  * @param f - The void function to execute.
  */
 function VoidWithTry(errMessage: string, arg: string, f: () => void): void {
-    TWithTry(errMessage, arg, () => {
+    try {
         f()
-        return O.none()
-    })
+    } catch (err) {
+        if (err instanceof Error) {
+            console.warn(errMessage, arg, ":", err.message)
+        }
+    }
 }
 
 /**
@@ -94,15 +73,20 @@ function toVueAst(content: string): babelParser.ParseResult {
  *
  * @param files - An array of file paths to be analyzed for TypeScript types
  * @param options - Configuration options object that controls the behavior
- * @returns An Option containing a TscUtils instance if successful, or none if type
+ * @returns A TscUtils instance if successful, or undefined if type
  *          extraction is disabled, files array is empty, or an error occurs during initialization
  * @see TscUtils - The utility class used for TypeScript type extraction
  */
-function buildTscUtils(files: string[], options: Options): O.Option<TscUtils> {
-    if (!options.tsTypes || files.length === 0) return O.none()
-    return TWithTry("Retrieving types", "", () => {
-        return O.some(new TscUtils(files))
-    })
+function buildTscUtils(files: string[], options: Options): TscUtils | undefined {
+    if (!options.tsTypes || files.length === 0) return undefined
+    try {
+        return new TscUtils(files)
+    } catch (err) {
+        if (err instanceof Error) {
+            console.warn("Retrieving types", "", ":", err.message)
+        }
+        return undefined
+    }
 }
 
 /**
@@ -120,21 +104,26 @@ function buildTscUtils(files: string[], options: Options): O.Option<TscUtils> {
  */
 async function createJSAst(options: Options): Promise<void> {
     try {
-        const srcFiles: FileEntry[] = await FileUtils.filesWithExtensions(options, Defaults.JS_EXTENSIONS)
-        const tscUtils: O.Option<TscUtils> = buildTscUtils(srcFiles.map(f => f.path), options)
+        const filePaths: string[] = []
+        const fileContents = new Map<string, string>()
+        for await (const file of FileUtils.filesWithExtensions(options, Defaults.JS_EXTENSIONS)) {
+            filePaths.push(file.path)
+            fileContents.set(file.path, file.content)
+        }
+        const tscUtils = buildTscUtils(filePaths, options)
         const createdDirs = new Set<string>()
-        for (const file of srcFiles) {
-            VoidWithTry("Parsing", file.path, () => {
-                const ast: babelParser.ParseResult = codeToJsAst(file.content)
-                writeAstFile(file.path, ast, options, createdDirs)
-                VoidWithTry("Retrieving types", file.path, () => {
-                    pipe(
-                        tscUtils,
-                        O.map(t => t.typeMapForFile(file.path)),
-                        O.filter(m => m.size !== 0),
-                        O.toArray
-                    ).forEach(m => writeTypesFile(file.path, m, options, createdDirs))
-                })
+        for (const [filePath, content] of fileContents) {
+            VoidWithTry("Parsing", filePath, () => {
+                const ast: babelParser.ParseResult = codeToJsAst(content)
+                writeAstFile(filePath, ast, options, createdDirs)
+                if (tscUtils) {
+                    VoidWithTry("Retrieving types", filePath, () => {
+                        const typeMap = tscUtils.typeMapForFile(filePath)
+                        if (typeMap.size !== 0) {
+                            writeTypesFile(filePath, typeMap, options, createdDirs)
+                        }
+                    })
+                }
             })
         }
     } catch (err) {
@@ -153,9 +142,8 @@ async function createJSAst(options: Options): Promise<void> {
  * @returns A Promise that resolves when all Vue files have been processed.
  */
 async function createVueAst(options: Options): Promise<void> {
-    const srcFiles: FileEntry[] = await FileUtils.filesWithExtensions(options, [".vue"])
     const createdDirs = new Set<string>()
-    for (const file of srcFiles) {
+    for await (const file of FileUtils.filesWithExtensions(options, [".vue"])) {
         VoidWithTry("", file.path, () => {
             writeAstFile(file.path, toVueAst(file.content), options, createdDirs)
         })

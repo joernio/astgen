@@ -619,11 +619,6 @@
   dependencies:
     "@sinonjs/commons" "^3.0.1"
 
-"@standard-schema/spec@^1.0.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@standard-schema/spec/-/spec-1.1.0.tgz#a79b55dbaf8604812f52d140b2c9ab41bc150bb8"
-  integrity sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==
-
 "@tsconfig/node18@^18.2.4":
   version "18.2.6"
   resolved "https://registry.yarnpkg.com/@tsconfig/node18/-/node18-18.2.6.tgz#21c894382e89fb5b641303f9ea3bbc04beb7060d"
@@ -1283,14 +1278,6 @@ eastasianwidth@^0.2.0:
   resolved "https://registry.yarnpkg.com/eastasianwidth/-/eastasianwidth-0.2.0.tgz#696ce2ec0aa0e6ea93a397ffcf24aa7840c827cb"
   integrity sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==
 
-effect@^3.21.0:
-  version "3.21.0"
-  resolved "https://registry.yarnpkg.com/effect/-/effect-3.21.0.tgz#ce222ce8f785b9e63f104b9a4ead985e7965f2c0"
-  integrity sha512-PPN80qRokCd1f015IANNhrwOnLO7GrrMQfk4/lnZRE/8j7UPWrNNjPV0uBrZutI/nHzernbW+J0hdqQysHiSnQ==
-  dependencies:
-    "@standard-schema/spec" "^1.0.0"
-    fast-check "^3.23.1"
-
 electron-to-chromium@^1.5.263:
   version "1.5.267"
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.5.267.tgz#5d84f2df8cdb6bfe7e873706bb21bd4bfb574dc7"
@@ -1383,13 +1370,6 @@ expect@30.2.0, expect@^30.0.0:
     jest-message-util "30.2.0"
     jest-mock "30.2.0"
     jest-util "30.2.0"
-
-fast-check@^3.23.1:
-  version "3.23.2"
-  resolved "https://registry.yarnpkg.com/fast-check/-/fast-check-3.23.2.tgz#0129f1eb7e4f500f58e8290edc83c670e4a574a2"
-  integrity sha512-h5+1OzzfCC3Ef7VbtKdcv7zsstUQwUDlYpUTvjeUsJAssPgLn7QzbboPtL5ro04Mq0rPOsMzl7q5hIbRs2wD1A==
-  dependencies:
-    pure-rand "^6.1.0"
 
 fast-fifo@^1.2.0, fast-fifo@^1.3.2:
   version "1.3.2"
@@ -2439,11 +2419,6 @@ pump@^3.0.0:
   dependencies:
     end-of-stream "^1.1.0"
     once "^1.3.1"
-
-pure-rand@^6.1.0:
-  version "6.1.0"
-  resolved "https://registry.yarnpkg.com/pure-rand/-/pure-rand-6.1.0.tgz#d173cf23258231976ccbdb05247c9787957604f2"
-  integrity sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==
 
 pure-rand@^7.0.0:
   version "7.0.1"

@@ -86,9 +86,9 @@ function readFileIfValid(fileWithDir: string, stats: fs.Stats): string | null {
  *
  * @param options - The options object containing source directory and exclusion patterns.
  * @param extensions - An array of file extensions to include (e.g., ['.js', '.ts']).
- * @returns A promise that resolves to an array of FileEntry objects for matching files.
+ * @returns An async generator that yields FileEntry objects for matching files.
  */
-export async function filesWithExtensions(options: Options, extensions: string[]): Promise<FileEntry[]> {
+export async function* filesWithExtensions(options: Options, extensions: string[]): AsyncGenerator<FileEntry> {
     const dir = options.src
     const stream = readdirp(dir, {
         fileFilter: (f) => !ignoreFileByName(options, f.basename, f.fullPath, extensions),
@@ -97,14 +97,12 @@ export async function filesWithExtensions(options: Options, extensions: string[]
         alwaysStat: true,
         depth: options.recurse ? undefined : 0,
     })
-    const files: FileEntry[] = []
     for await (const entry of stream) {
         const content = readFileIfValid(entry.fullPath, entry.stats as fs.Stats)
         if (content !== null) {
-            files.push({ path: entry.fullPath, content })
+            yield { path: entry.fullPath, content }
         }
     }
-    return files
 }
 
 /**

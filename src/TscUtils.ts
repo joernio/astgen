@@ -57,12 +57,16 @@ export default class TscUtils {
             if (!this.shouldResolveType(node)) return
             let typeStr
             if (this.isSignatureDeclaration(node)) {
-                const signature: tsc.Signature = this.typeChecker.getSignatureFromDeclaration(node)!
-                const returnType: tsc.Type = this.typeChecker.getReturnTypeOfSignature(signature)
-                typeStr = this.safeTypeToString(returnType)
+                const signature = this.typeChecker.getSignatureFromDeclaration(node)
+                if (signature) {
+                    const returnType: tsc.Type = this.typeChecker.getReturnTypeOfSignature(signature)
+                    typeStr = this.safeTypeToString(returnType)
+                } else {
+                    typeStr = this.safeTypeToString(this.typeChecker.getTypeAtLocation(node))
+                }
             } else if (tsc.isFunctionLike(node)) {
                 const funcType: tsc.Type = this.typeChecker.getTypeAtLocation(node)
-                const funcSignature: tsc.Signature  = this.typeChecker.getSignaturesOfType(funcType, tsc.SignatureKind.Call)[0]
+                const funcSignature: tsc.Signature = this.typeChecker.getSignaturesOfType(funcType, tsc.SignatureKind.Call)[0]
                 typeStr = funcSignature
                     ? this.safeTypeToString(funcSignature.getReturnType())
                     : this.safeTypeToString(funcType)
