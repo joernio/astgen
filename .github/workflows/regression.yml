@@ -27,7 +27,6 @@ jobs:
         run: |
           yarn install
           yarn build
-          cp -r dist dist-pr
 
       - name: Build base version
         run: |
@@ -35,21 +34,23 @@ jobs:
           git fetch origin ${{ github.base_ref }}
           git worktree add ../astgen-base "origin/${{ github.base_ref }}"
           (cd ../astgen-base && yarn install && yarn build)
-          cp -r ../astgen-base/dist dist-base
-          git worktree remove --force ../astgen-base
 
       - name: Run regression script
         run: |
           BASE_SHA=$(git rev-parse --short "origin/${{ github.base_ref }}")
           PR_SHA=$(git rev-parse --short HEAD)
           python3 scripts/regression.py \
-            --base-dist dist-base \
-            --pr-dist dist-pr \
+            --base-dist ../astgen-base/dist \
+            --pr-dist dist \
             --pr-number "${{ github.event.pull_request.number }}" \
             --base-ref "${{ github.base_ref }} @ ${BASE_SHA}" \
             --pr-ref "${{ github.head_ref }} @ ${PR_SHA}" \
             --output-diffs regression-diffs \
             > regression-report.md
+
+      - name: Clean up base worktree
+        if: always()
+        run: git worktree remove --force ../astgen-base
 
       - name: Upload diff artifacts
         uses: actions/upload-artifact@v6

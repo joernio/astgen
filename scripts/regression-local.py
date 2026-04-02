@@ -15,7 +15,6 @@ Or via yarn:
 import argparse
 import os
 import pathlib
-import shutil
 import subprocess
 import sys
 
@@ -85,20 +84,15 @@ def main() -> None:
     print(f"[local-regression] Current branch: {branch} @ {pr_sha}", file=sys.stderr)
     print(f"[local-regression] Base branch:    {args.base_branch}", file=sys.stderr)
 
-    # Keep dist-pr and dist-base inside the repo root so that Node can resolve
-    # node_modules by walking up the directory tree (same as the CI workflow).
     worktree_path = str(repo_root / ".worktrees" / "regression-base")
-    dist_pr = str(repo_root / "dist-pr")
-    dist_base = str(repo_root / "dist-base")
+    dist_pr = str(repo_root / "dist")
+    dist_base = os.path.join(worktree_path, "dist")
 
     try:
         # Build PR version (current working tree)
         print("[local-regression] Building PR version (current tree)...", file=sys.stderr)
         run(["yarn", "install"], cwd=str(repo_root))
         run(["yarn", "build"], cwd=str(repo_root))
-        if os.path.exists(dist_pr):
-            shutil.rmtree(dist_pr)
-        shutil.copytree(str(repo_root / "dist"), dist_pr)
 
         # Build base version via git worktree
         print(f"[local-regression] Fetching {args.base_branch} from origin...", file=sys.stderr)
@@ -112,14 +106,11 @@ def main() -> None:
         print("[local-regression] Building base version...", file=sys.stderr)
         run(["yarn", "install"], cwd=worktree_path)
         run(["yarn", "build"], cwd=worktree_path)
-        if os.path.exists(dist_base):
-            shutil.rmtree(dist_base)
-        shutil.copytree(os.path.join(worktree_path, "dist"), dist_base)
 
-        # Remove worktree before running regression
-        run(["git", "worktree", "remove", worktree_path], cwd=str(repo_root))
-
-        # Run regression script — output goes directly to stdout
+        # Run regression script with each binary served from its own build directory
+        # so that Node resolves node_modules relative to each binary's location,
+        # not from the shared repo root. This matters when dependencies change between
+        # base and PR.
         print("[local-regression] Running regression harness...\n", file=sys.stderr)
         subprocess.run(
             [
@@ -133,9 +124,7 @@ def main() -> None:
         )
 
     finally:
-        shutil.rmtree(dist_pr, ignore_errors=True)
-        shutil.rmtree(dist_base, ignore_errors=True)
-        # Clean up worktree registration if it still exists (e.g. on early failure)
+        # Clean up worktree registration (also removes worktree_path/node_modules)
         subprocess.run(
             ["git", "worktree", "remove", "--force", worktree_path],
             cwd=str(repo_root),

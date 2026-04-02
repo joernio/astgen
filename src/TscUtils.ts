@@ -2,7 +2,24 @@ import * as Defaults from "./Defaults"
 
 import tsc from "typescript"
 
-export type TypeMap = Map<string, string>
+export type TypeMap = Map<number, string>
+
+// Packs (start, end) positions into a single number key.
+// Using a Map<number, string> avoids per-entry string allocation; at the scale of a full
+// TypeMap (one entry per AST node), packed doubles (~12B each) are ~4x cheaper than
+// equivalent "start:end" strings (~50B each) and avoid the N inner-Map overhead of a
+// nested Map<number, Map<number, string>>.
+//
+// POS_SHIFT = 2^26: supports positions up to 64MB per file.
+// The 5MB file size guard (MAX_FILE_SIZE_BYTES) ensures this assumption holds.
+const POS_SHIFT = 0x4000000
+export function encodePos(start: number, end: number): number {
+    return start * POS_SHIFT + end
+}
+export function decodePos(key: number): [number, number] {
+    const start = Math.floor(key / POS_SHIFT)
+    return [start, key - start * POS_SHIFT]
+}
 
 /**
  * Utility class for working with the TypeScript compiler API.
@@ -36,7 +53,7 @@ export default class TscUtils {
      * @returns A `TypeMap` mapping node positions to their inferred type strings.
      */
     typeMapForFile(file: string): TypeMap {
-        let addType: (node: tsc.Node) => void = (node: tsc.Node): void => {
+        const addType: (node: tsc.Node) => void = (node: tsc.Node): void => {
             if (!this.shouldResolveType(node)) return
             let typeStr
             if (this.isSignatureDeclaration(node)) {
@@ -45,22 +62,19 @@ export default class TscUtils {
                 typeStr = this.safeTypeToString(returnType)
             } else if (tsc.isFunctionLike(node)) {
                 const funcType: tsc.Type = this.typeChecker.getTypeAtLocation(node)
-                const funcSignature: tsc.Signature = this.typeChecker.getSignaturesOfType(funcType, tsc.SignatureKind.Call)[0]
-                if (funcSignature) {
-                    typeStr = this.safeTypeToString(funcSignature.getReturnType())
-                } else {
-                    typeStr = this.safeTypeToString(this.typeChecker.getTypeAtLocation(node))
-                }
+                const funcSignature: tsc.Signature  = this.typeChecker.getSignaturesOfType(funcType, tsc.SignatureKind.Call)[0]
+                typeStr = funcSignature
+                    ? this.safeTypeToString(funcSignature.getReturnType())
+                    : this.safeTypeToString(funcType)
             } else {
                 typeStr = this.safeTypeToString(this.typeChecker.getTypeAtLocation(node))
             }
             if (typeStr !== Defaults.ANY) {
-                const pos = `${node.getStart()}:${node.getEnd()}`
-                seenTypes.set(pos, typeStr)
+                seenTypes.set(encodePos(node.getStart(), node.getEnd()), typeStr)
             }
         }
 
-        const seenTypes = new Map<string, string>()
+        const seenTypes = new Map<number, string>()
         this.forEachNode(this.program.getSourceFile(file)!, addType)
         return seenTypes
     }

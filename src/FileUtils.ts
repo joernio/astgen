@@ -3,8 +3,9 @@ import * as Defaults from "./Defaults"
 
 import {readdirp} from 'readdirp'
 import * as fs from "node:fs"
-import nReadlines from "n-readlines"
 import * as path from "node:path"
+
+export type FileEntry = { path: string; content: string }
 
 function dirIsInIgnorePath(options: Options, fullPath: string, ignorePath: string): boolean {
     if (path.isAbsolute(ignorePath)) {
@@ -32,38 +33,6 @@ function ignoreDirectory(options: Options, dirName: string, fullPath: string): b
         Defaults.IGNORE_DIRS.includes(dirName.toLowerCase())
 }
 
-function isTooBig(fileWithDir: string): boolean {
-    if (fs.statSync(fileWithDir).size > Defaults.MAX_FILE_SIZE_BYTES) {
-        console.warn(fileWithDir, "exceeds maximum file size of", Defaults.MAX_FILE_SIZE_BYTES, "bytes")
-        return true
-    }
-    return false
-}
-
-const EMSCRIPTEN_MARKER = Buffer.from("// EMSCRIPTEN_START_ASM")
-
-function shouldSkipFileContent(fileWithDir: string): boolean {
-    const lines = new nReadlines(fileWithDir)
-    let lineNumber = 0
-    let line: Buffer | false
-    while ((line = lines.next()) !== false) {
-        lineNumber++
-        if (line.length > Defaults.MAX_LINE_LENGTH) {
-            console.warn(fileWithDir, "line", lineNumber, "exceeds", Defaults.MAX_LINE_LENGTH, "bytes")
-            return true
-        }
-        if (lineNumber > Defaults.MAX_LOC_IN_FILE) {
-            console.warn(fileWithDir, "more than", Defaults.MAX_LOC_IN_FILE, "lines of code")
-            return true
-        }
-        if (line.includes(EMSCRIPTEN_MARKER)) {
-            console.warn("Parsing", fileWithDir, ":", "File skipped as it contains EMSCRIPTEN code")
-            return true
-        }
-    }
-    return false
-}
-
 function ignoreFileByName(options: Options, fileName: string, fullPath: string, extensions: string[]): boolean {
     return !extensions.some((e: string) => fileName.endsWith(e)) ||
         fileName.startsWith(".") ||
@@ -73,8 +42,36 @@ function ignoreFileByName(options: Options, fileName: string, fullPath: string, 
         (options["exclude-regex"]?.test(fullPath) ?? false)
 }
 
-function shouldSkipFileIO(fullPath: string): boolean {
-    return isTooBig(fullPath) || shouldSkipFileContent(fullPath)
+// Reads the file content if it passes all size/content guards, or returns null with a warning.
+// Uses the stats object already populated by readdirp (lstat: true) to avoid a redundant stat call.
+// Files that pass the size check are read once here; the content is returned to avoid a second
+// read during parsing.
+function readFileIfValid(fileWithDir: string, stats: fs.Stats): string | null {
+    if (stats.size > Defaults.MAX_FILE_SIZE_BYTES) {
+        console.warn(fileWithDir, "exceeds maximum file size of", Defaults.MAX_FILE_SIZE_BYTES, "bytes")
+        return null
+    }
+    const content = fs.readFileSync(fileWithDir, "utf-8")
+    if (content.includes("// EMSCRIPTEN_START_ASM")) {
+        console.warn("Parsing", fileWithDir, ":", "File skipped as it contains EMSCRIPTEN code")
+        return null
+    }
+    let lineStart = 0
+    let lineCount = 0
+    for (let i = 0; i <= content.length; i++) {
+        if (i === content.length || content[i] === "\n") {
+            if (i - lineStart > Defaults.MAX_LINE_LENGTH) {
+                console.warn(fileWithDir, "line", lineCount + 1, "exceeds", Defaults.MAX_LINE_LENGTH, "bytes")
+                return null
+            }
+            if (++lineCount >= Defaults.MAX_LOC_IN_FILE) {
+                console.warn(fileWithDir, "more than", Defaults.MAX_LOC_IN_FILE, "lines of code")
+                return null
+            }
+            lineStart = i + 1
+        }
+    }
+    return content
 }
 
 /**
@@ -83,23 +80,28 @@ function shouldSkipFileIO(fullPath: string): boolean {
  *
  * Uses the streaming readdirp API so that entry objects can be GC'd incrementally.
  * Cheap name-based filters run during traversal; expensive I/O checks (file size,
- * line scanning) run per-entry as entries stream in.
+ * line scanning) run per-entry as entries stream in. The file content is read once and
+ * returned with each entry to avoid a second read during parsing.
+ * When `options.recurse` is false, only files in the top-level source directory are returned.
  *
  * @param options - The options object containing source directory and exclusion patterns.
  * @param extensions - An array of file extensions to include (e.g., ['.js', '.ts']).
- * @returns A promise that resolves to an array of absolute file paths matching the extensions and not excluded.
+ * @returns A promise that resolves to an array of FileEntry objects for matching files.
  */
-export async function filesWithExtensions(options: Options, extensions: string[]): Promise<string[]> {
+export async function filesWithExtensions(options: Options, extensions: string[]): Promise<FileEntry[]> {
     const dir = options.src
     const stream = readdirp(dir, {
         fileFilter: (f) => !ignoreFileByName(options, f.basename, f.fullPath, extensions),
         directoryFilter: (d) => !ignoreDirectory(options, d.basename, d.fullPath),
-        lstat: true
+        lstat: true,
+        alwaysStat: true,
+        depth: options.recurse ? undefined : 0,
     })
-    const files: string[] = []
+    const files: FileEntry[] = []
     for await (const entry of stream) {
-        if (!shouldSkipFileIO(entry.fullPath)) {
-            files.push(entry.fullPath)
+        const content = readFileIfValid(entry.fullPath, entry.stats as fs.Stats)
+        if (content !== null) {
+            files.push({ path: entry.fullPath, content })
         }
     }
     return files
