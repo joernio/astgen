@@ -1,6 +1,7 @@
 import Options from "./Options"
 import * as Defaults from "./Defaults"
 import * as FileUtils from "./FileUtils"
+import type { FileEntry } from "./FileUtils"
 import * as JsonUtils from "./JsonUtils"
 import * as VueCodeCleaner from "./VueCodeCleaner"
 import TscUtils, {TypeMap} from "./TscUtils"
@@ -48,20 +49,6 @@ function VoidWithTry(errMessage: string, arg: string, f: () => void): void {
 }
 
 /**
- * Converts a single JavaScript or TypeScript file to an Abstract Syntax Tree (AST).
- * Reads the file content from the filesystem and passes it to the codeToJsAst function
- * for parsing with Babel.
- *
- * @param file - The absolute or relative path to the JS/TS file to be parsed
- * @returns A Babel ParseResult object representing the AST of the file's content
- * @throws Will throw an error if the file cannot be read or if parsing fails
- * @see codeToJsAst - The underlying function used for parsing code strings
- */
-function fileToJsAst(file: string): babelParser.ParseResult {
-    return codeToJsAst(fs.readFileSync(file, "utf-8"))
-}
-
-/**
  * Converts a JavaScript or TypeScript code string to an Abstract Syntax Tree (AST).
  *
  * The function first attempts to parse the code with standard Babel parser options.
@@ -83,22 +70,19 @@ function codeToJsAst(code: string): babelParser.ParseResult {
 }
 
 /**
- * Converts a single Vue file to an Abstract Syntax Tree (AST).
+ * Converts pre-read Vue file content to an Abstract Syntax Tree (AST).
  *
- * This function reads the Vue file content from the filesystem, cleans the code
- * using the VueCodeCleaner utility to extract and process the script section,
- * and then parses the cleaned code into an AST using the Babel parser.
+ * This function cleans the code using the VueCodeCleaner utility to extract and
+ * process the script section, then parses the cleaned code into an AST using Babel.
  *
- * @param file - The absolute or relative path to the Vue file to be parsed
+ * @param content - The raw content of the Vue file
  * @returns A Babel ParseResult object representing the AST of the Vue file's script content
- * @throws Will throw an error if the file cannot be read or if parsing fails
+ * @throws Will throw an error if parsing fails
  * @see VueCodeCleaner.cleanVueCode - The utility used to extract script content from Vue files
  * @see codeToJsAst - The underlying function used for parsing the extracted code
  */
-function toVueAst(file: string): babelParser.ParseResult {
-    const code = fs.readFileSync(file, "utf-8")
-    const cleanedCode = VueCodeCleaner.cleanVueCode(code)
-    return codeToJsAst(cleanedCode)
+function toVueAst(content: string): babelParser.ParseResult {
+    return codeToJsAst(VueCodeCleaner.cleanVueCode(content))
 }
 
 /**
@@ -136,19 +120,20 @@ function buildTscUtils(files: string[], options: Options): O.Option<TscUtils> {
  */
 async function createJSAst(options: Options): Promise<void> {
     try {
-        const srcFiles: string[] = await FileUtils.filesWithExtensions(options, Defaults.JS_EXTENSIONS)
-        const tscUtils: O.Option<TscUtils> = buildTscUtils(srcFiles, options)
+        const srcFiles: FileEntry[] = await FileUtils.filesWithExtensions(options, Defaults.JS_EXTENSIONS)
+        const tscUtils: O.Option<TscUtils> = buildTscUtils(srcFiles.map(f => f.path), options)
+        const createdDirs = new Set<string>()
         for (const file of srcFiles) {
-            VoidWithTry("Parsing", file, () => {
-                const ast: babelParser.ParseResult = fileToJsAst(file)
-                writeAstFile(file, ast, options)
-                VoidWithTry("Retrieving types", file, () => {
+            VoidWithTry("Parsing", file.path, () => {
+                const ast: babelParser.ParseResult = codeToJsAst(file.content)
+                writeAstFile(file.path, ast, options, createdDirs)
+                VoidWithTry("Retrieving types", file.path, () => {
                     pipe(
                         tscUtils,
-                        O.map(t => t.typeMapForFile(file)),
+                        O.map(t => t.typeMapForFile(file.path)),
                         O.filter(m => m.size !== 0),
                         O.toArray
-                    ).forEach(m => writeTypesFile(file, m, options))
+                    ).forEach(m => writeTypesFile(file.path, m, options, createdDirs))
                 })
             })
         }
@@ -168,10 +153,11 @@ async function createJSAst(options: Options): Promise<void> {
  * @returns A Promise that resolves when all Vue files have been processed.
  */
 async function createVueAst(options: Options): Promise<void> {
-    const srcFiles: string[] = await FileUtils.filesWithExtensions(options, [".vue"])
+    const srcFiles: FileEntry[] = await FileUtils.filesWithExtensions(options, [".vue"])
+    const createdDirs = new Set<string>()
     for (const file of srcFiles) {
-        VoidWithTry("", file, () => {
-            writeAstFile(file, toVueAst(file), options)
+        VoidWithTry("", file.path, () => {
+            writeAstFile(file.path, toVueAst(file.content), options, createdDirs)
         })
     }
 }
@@ -182,12 +168,14 @@ async function createVueAst(options: Options): Promise<void> {
  * The output file is created in the output directory specified in the options,
  * preserving the relative path structure from the source directory. The AST data
  * is serialized using a utility that handles circular references.
+ * Output directories are created at most once per unique path via `createdDirs`.
  *
  * @param file - The absolute path to the source file.
  * @param ast - The Babel ParseResult object representing the AST of the file.
  * @param options - Configuration options containing source and output directories.
+ * @param createdDirs - Set tracking already-created output directories to avoid redundant mkdirSync calls.
  */
-function writeAstFile(file: string, ast: babelParser.ParseResult, options: Options): void {
+function writeAstFile(file: string, ast: babelParser.ParseResult, options: Options, createdDirs: Set<string>): void {
     const relativePath: string = path.relative(options.src, file)
     const outAstFile: string = path.join(options.output, relativePath + ".json")
     const data = {
@@ -195,7 +183,11 @@ function writeAstFile(file: string, ast: babelParser.ParseResult, options: Optio
         relativeName: relativePath,
         ast: ast,
     }
-    fs.mkdirSync(path.dirname(outAstFile), {recursive: true})
+    const dir = path.dirname(outAstFile)
+    if (!createdDirs.has(dir)) {
+        fs.mkdirSync(dir, {recursive: true})
+        createdDirs.add(dir)
+    }
     JsonUtils.writeJsonStreamCircular(outAstFile, data)
     console.log("Converted AST for", relativePath, "to", outAstFile)
 }
@@ -205,15 +197,21 @@ function writeAstFile(file: string, ast: babelParser.ParseResult, options: Optio
  *
  * The function serializes the provided `TypeMap` and writes it to a `.typemap` file
  * in the output directory, preserving the relative path structure from the source directory.
+ * Output directories are created at most once per unique path via `createdDirs`.
  *
  * @param file - The absolute path to the source file.
  * @param seenTypes - The `TypeMap` containing type information to be written.
  * @param options - Configuration options containing source and output directories.
+ * @param createdDirs - Set tracking already-created output directories to avoid redundant mkdirSync calls.
  */
-function writeTypesFile(file: string, seenTypes: TypeMap, options: Options): void {
+function writeTypesFile(file: string, seenTypes: TypeMap, options: Options, createdDirs: Set<string>): void {
     const relativePath: string = path.relative(options.src, file)
     const outTypeFile: string = path.join(options.output, relativePath + ".typemap")
-    fs.mkdirSync(path.dirname(outTypeFile), {recursive: true})
+    const dir = path.dirname(outTypeFile)
+    if (!createdDirs.has(dir)) {
+        fs.mkdirSync(dir, {recursive: true})
+        createdDirs.add(dir)
+    }
     JsonUtils.writeMapToJsonFile(outTypeFile, seenTypes)
     console.log("Converted types for", relativePath, "to", outTypeFile)
 }
@@ -222,22 +220,21 @@ function writeTypesFile(file: string, seenTypes: TypeMap, options: Options): voi
  * Determines the project type in the given source directory and triggers AST generation accordingly.
  *
  * This function checks if the provided source directory contains a `package.json` or `rush.json` file
- * to identify it as a Node.js or JavaScript/TypeScript project. If so, it calls `createJSAst` to generate
- * ASTs for the source files. If neither file is found, it logs an error and exits the process.
+ * to identify it as a Node.js or JavaScript/TypeScript project. If neither marker is found, it logs
+ * a warning and falls back to JS/TS processing rather than exiting.
  *
  * @param options - Configuration options containing the source directory and output settings.
- * @returns A Promise that resolves when AST generation is complete or the process exits on error.
+ * @returns A Promise that resolves when AST generation is complete.
  */
 async function createXAst(options: Options): Promise<void> {
     const srcDir: string = options.src
-    if (
+    const isKnownJsProject =
         FileUtils.fileExistsAndIsReadable(path.join(srcDir, "package.json")) ||
         FileUtils.fileExistsAndIsReadable(path.join(srcDir, "rush.json"))
-    ) {
-        return await createJSAst(options)
+    if (!isKnownJsProject) {
+        console.warn("No package.json or rush.json found in", srcDir, "— processing as JS/TS project")
     }
-    console.error("Unknown project type:", srcDir)
-    process.exit(1)
+    return await createJSAst(options)
 }
 
 /**

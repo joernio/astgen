@@ -1,6 +1,6 @@
 {
   "name": "@joernio/astgen",
-  "version": "3.40.0",
+  "version": "3.41.0",
   "description": "Generate JS/TS AST in json format with Babel",
   "exports": "./index.js",
   "keywords": [
@@ -15,8 +15,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@babel/parser": "^7.27.3",
-    "effect": "^3.19.14",
-    "n-readlines": "^1.0.1",
+    "effect": "^3.21.0",
     "readdirp": "^4.1.2",
     "typescript": "^5.9.3",
     "yargs": "^17.7.2"
@@ -39,7 +38,6 @@
   "devDependencies": {
     "@tsconfig/node18": "^18.2.4",
     "@types/jest": "^30.0.0",
-    "@types/n-readlines": "^1.0.6",
     "@types/node": "^18.11.9",
     "@types/yargs": "^17.0.33",
     "@yao-pkg/pkg": "^6.12.0",
